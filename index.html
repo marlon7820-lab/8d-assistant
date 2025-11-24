@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v11.0 Final)</title>
+    <title>8D Report Assistant (v12.0)</title>
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -21,7 +21,9 @@
             --border-col: #87AFC7;
             --input-bg: #ffffff;
             --ai-bg: #e8f4fd;
-            --guide-bg: rgba(30, 144, 255, 0.1);
+            --guide-bg: #ffffff;
+            --example-bg: #fff9c4; /* Yellow highlight for examples */
+            --example-border: #fbc02d;
         }
 
         body.dark-mode {
@@ -35,6 +37,8 @@
             --input-bg: #3a3a3a;
             --ai-bg: #333;
             --guide-bg: #333;
+            --example-bg: #4a4a20;
+            --example-border: #888800;
         }
 
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: linear-gradient(to right, var(--bg-body), var(--bg-panel)); color: var(--text-main); height: 100vh; display: flex; transition: all 0.3s ease; }
@@ -46,8 +50,12 @@
         .control-group { margin-bottom: 20px; border-bottom: 1px solid var(--border-col); padding-bottom: 15px; }
         .control-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.9em; }
         
-        select, input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-col); border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
+        select, input[type="text"], textarea { width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-col); border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
         select:focus, input:focus, textarea:focus { border-color: var(--primary); outline: none; }
+
+        /* Readonly Input Style (Grayed Out) */
+        input[readonly] { background-color: #e0e0e0; color: #666; cursor: not-allowed; border: 1px solid #ccc; }
+        body.dark-mode input[readonly] { background-color: #444; color: #aaa; border: 1px solid #555; }
 
         /* Toggle */
         .toggle-btn { cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9em; font-weight: 600; }
@@ -65,7 +73,6 @@
         .btn-primary { background: var(--primary); }
         .btn-primary:hover { filter: brightness(1.1); }
         .btn-danger { background: #ff6b6b; }
-        .btn-small { padding: 5px 10px; width: auto; font-size: 0.8em; margin-top: 5px; }
 
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
@@ -82,11 +89,22 @@
         .step-container h2 { margin-top: 0; color: var(--primary-dark); }
 
         /* Training Guides */
-        details { background: var(--guide-bg); border-left: 5px solid var(--primary); padding: 15px; border-radius: 4px; margin-bottom: 25px; }
+        details { background: var(--guide-bg); border-left: 5px solid var(--primary); padding: 15px; border-radius: 4px; margin-bottom: 25px; border: 1px solid #eee; }
         summary { cursor: pointer; font-weight: bold; color: var(--primary); outline: none; list-style: none; }
         summary::-webkit-details-marker { display: none; }
         summary::before { content: '📘 '; }
         .guidance-content { margin-top: 10px; font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
+        
+        /* Example Box Highlight */
+        .example-box { 
+            background-color: var(--example-bg); 
+            border-left: 5px solid var(--example-border);
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-style: italic;
+            color: var(--text-main);
+        }
 
         /* Checkboxes (D3/D4) */
         .checkbox-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
@@ -94,22 +112,35 @@
         .checkbox-label:hover { border-color: var(--primary); color: var(--primary); }
         .checkbox-label input:checked + span { font-weight: 700; color: var(--primary); }
 
-        /* D5 Layout */
+        /* D5 Improved Layout */
         .d5-context { background: var(--ai-bg); padding: 15px; border-radius: 6px; margin-bottom: 25px; border: 1px solid var(--primary); color: var(--text-main); }
         .d5-section { border-bottom: 2px dashed var(--border-col); padding-bottom: 25px; margin-bottom: 25px; }
         .d5-section h3 { color: var(--primary-dark); margin-bottom: 15px; border-left: 4px solid var(--primary); padding-left: 10px; }
         
-        .why-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .why-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; position: relative; }
+        
+        /* D5 Visual Chain (Arrow) */
+        .why-row::before {
+            content: '⬇';
+            position: absolute;
+            top: -18px;
+            left: 20px;
+            font-size: 12px;
+            color: var(--primary);
+            opacity: 0.5;
+        }
+        .why-row:first-child::before { content: none; } /* No arrow on first item */
+
         .why-label { width: 60px; font-weight: bold; font-size: 0.85em; flex-shrink: 0; text-align: right; margin-right: 5px; }
-        .why-select { flex: 1; margin-bottom: 0; }
-        .why-custom { flex: 1; margin-bottom: 0; border: 2px solid var(--primary); }
+        .why-select { width: 300px; margin-bottom: 0; }
+        .why-custom { flex: 1; margin-bottom: 0; border: 2px solid var(--primary); } /* Wider Custom Input */
         
         .add-why-btn { background: #eee; color: #333; border: 1px solid #ccc; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; margin-left: 75px; }
         .add-why-btn:hover { background: #ddd; }
 
-        .root-cause-box { margin-top: 15px; padding-left: 75px; }
-        .root-cause-box label { font-weight: bold; color: var(--primary-dark); display: block; margin-bottom: 5px; font-size: 0.9em; }
-        .root-cause-box textarea { background: var(--ai-bg); border: 1px solid var(--primary); font-weight: 500; height: 70px; }
+        .root-cause-box { margin-top: 20px; padding-left: 0; background: var(--guide-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-col); }
+        .root-cause-box label { font-weight: bold; color: var(--primary-dark); display: block; margin-bottom: 5px; font-size: 1em; }
+        .root-cause-box textarea { background: #fff; border: 2px solid var(--primary); font-weight: 500; height: 80px; }
 
         /* AI Floating Button */
         .ai-float-container { text-align: center; margin-bottom: 20px; }
@@ -149,15 +180,10 @@
         </label>
     </div>
 
-    <!-- API KEY INPUT -->
+    <!-- API KEY (Grayed Out) -->
     <div class="control-group">
         <label>AI API Key</label>
-        <input type="password" id="userApiKey" value="" placeholder="Paste New Key Here">
-        <div style="display:flex; gap:5px;">
-            <button class="btn btn-small btn-primary" onclick="testApiKey()">Test Key</button>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-small" style="background:#ccc; color:black; text-decoration:none; text-align:center;">Get Key</a>
-        </div>
-        <div id="keyStatus" style="font-size:10px; margin-top:5px;"></div>
+        <input type="password" id="userApiKey" value="AIzaSyCFAxV2ctl9jwi77Fi2X4sY3sgeT2fBPic" readonly>
     </div>
 
     <div class="control-group">
@@ -169,7 +195,7 @@
     <div style="margin-top: auto;">
         <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Report</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v11.0</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v12.0</p>
     </div>
 </div>
 
@@ -199,6 +225,11 @@
 const SECRET_PART_A = "QUl6YVN5Q3loX09TVm9oNWxmRHNuYmJQS3RJTXJRVW1TOUFjcWNV"; 
 const DEFAULT_KEY = atob(SECRET_PART_A); 
 
+const placeholders = {
+    en: "Enter your response here...",
+    es: "Ingrese su respuesta aquí..."
+};
+
 /**
  * CONTENT & DATA
  */
@@ -206,143 +237,111 @@ const contentDB = {
     D1: {
         en: { 
             title: "D1: Team & Problem", 
-            full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved in solving the issue.</li><li>Include functions like Quality, Engineering, Production, Supplier, etc.</li><li>Assign clear roles and responsibilities.</li><li>Example: <i>John (Quality) – Team Leader; Maria (Engineering) – Root Cause Analyst</i>.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b> (avoid assumptions).</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li><li>Example: <i>Customer reports radio does not power on after 2 hours of use in hot conditions.</i></li></ul></li></ul>", 
-            example: "Customer reports radio does not power on after 2 hours of use in hot conditions." 
+            full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved in solving the issue.</li><li>Include functions like Quality, Engineering, Production, Supplier, etc.</li><li>Assign clear roles and responsibilities.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b> (avoid assumptions).</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li></ul></li></ul>", 
+            example: "<b>Team:</b> John (Quality) – Team Leader; Maria (Engineering).<br><b>Problem:</b> Customer reports radio does not power on after 2 hours of use in hot conditions." 
         },
         es: { 
             title: "D1: Equipo y Problema", 
-            full_guide: "<ul><li><b>Definir el Equipo:</b><ul><li>Identifica a todos los miembros del equipo involucrados.</li><li>Incluye áreas como Calidad, Ingeniería, Producción, Proveedor, etc.</li><li>Asigna roles y responsabilidades claras.</li><li>Ejemplo: <i>Juan (Calidad) – Líder del Equipo; María (Ingeniería) – Análisis de Causa Raíz</i>.</li></ul></li><br><li><b>Describir el Problema:</b><ul><li>Enfócate en <b>hechos y datos medibles</b> (evita suposiciones).</li><li>Usa 5W2H (Quién, Qué, Dónde, Cuándo, Por qué, Cómo, Cuántos).</li><li>Ejemplo: <i>El cliente reporta que el radio no enciende después de 2 horas de uso en condiciones de calor.</i></li></ul></li></ul>", 
-            example: "El cliente reporta que el radio no enciende después de 2 horas." 
+            full_guide: "<ul><li><b>Definir el Equipo:</b><ul><li>Identifica a todos los miembros del equipo involucrados.</li><li>Incluye áreas como Calidad, Ingeniería, Producción, Proveedor, etc.</li><li>Asigna roles y responsabilidades claras.</li></ul></li><br><li><b>Describir el Problema:</b><ul><li>Enfócate en <b>hechos y datos medibles</b> (evita suposiciones).</li><li>Usa 5W2H (Quién, Qué, Dónde, Cuándo, Por qué, Cómo, Cuántos).</li></ul></li></ul>", 
+            example: "<b>Equipo:</b> Juan (Calidad) – Líder; María (Ingeniería).<br><b>Problema:</b> El cliente reporta que el radio no enciende después de 2 horas de uso en condiciones de calor." 
         }
     },
     D2: {
         en: { 
             title: "D2: Similar Parts", 
-            full_guide: "<ul><li>Identify parts, models, colors, or assemblies that could also be affected.</li><li>Consider variations in suppliers, batches, or production lines.</li><li>Example: <i>Front vs. rear speaker, similar model radios, alternate supplier components.</i></li></ul>", 
-            example: "Front vs. rear speaker, similar model radios." 
+            full_guide: "<ul><li>Identify parts, models, colors, or assemblies that could also be affected.</li><li>Consider variations in suppliers, batches, or production lines.</li></ul>", 
+            example: "Front vs. rear speaker, similar model radios, alternate supplier components." 
         },
         es: { 
             title: "D2: Partes Similares", 
-            full_guide: "<ul><li>Identifica piezas, modelos, colores o ensamblajes que también podrían verse afectados.</li><li>Considera variaciones de proveedores, lotes o líneas de producción.</li><li>Ejemplo: <i>Altavoz delantero vs trasero, radios de modelo similar, componentes de proveedor alternativo.</i></li></ul>", 
-            example: "Altavoz delantero vs trasero, radios de modelo similar." 
+            full_guide: "<ul><li>Identifica piezas, modelos, colores o ensamblajes que también podrían verse afectados.</li><li>Considera variaciones de proveedores, lotes o líneas de producción.</li></ul>", 
+            example: "Altavoz delantero vs trasero, radios de modelo similar, componentes de proveedor alternativo." 
         }
     },
     D3: {
         en: { 
             title: "D3: Initial Analysis", 
-            full_guide: "<ul><li>Gather and review all relevant data.</li><li>Look for patterns, trends, or unusual occurrences.</li><li>Example: <i>Review production logs and defect reports to identify common failure points.</i></li></ul>", 
-            example: "Visual inspection of solder joints, initial functional tests." 
+            full_guide: "<ul><li>Gather and review all relevant data.</li><li>Look for patterns, trends, or unusual occurrences.</li></ul>", 
+            example: "Review production logs and defect reports to identify common failure points." 
         },
         es: { 
             title: "D3: Análisis Inicial", 
-            full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias o sucesos inusuales.</li><li>Ejemplo: <i>Revisar registros de producción e informes de defectos para identificar puntos de falla comunes.</i></li></ul>", 
-            example: "Inspección visual de soldaduras, pruebas funcionales." 
+            full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias o sucesos inusuales.</li></ul>", 
+            example: "Revisar registros de producción e informes de defectos para identificar puntos de falla comunes." 
         }
     },
     D4: {
         en: { 
             title: "D4: Containment", 
-            full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs in warehouse, stopped shipments to customer.</i></li></ul>", 
-            example: "Post Quality Alert, Increase Inspection." 
+            full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Ensure no bad parts reach the customer while you investigate.</li></ul>", 
+            example: "Quarantined 200 pcs in warehouse, stopped shipments to customer." 
         },
         es: { 
             title: "D4: Contención", 
-            full_guide: "<ul><li>Describe las acciones temporales para aislar material defectuoso.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas en almacén, se detuvieron envíos al cliente.</i></li></ul>", 
-            example: "Implementar Ayuda Visual, Incrementar Inspección." 
+            full_guide: "<ul><li>Describe las acciones temporales para aislar material defectuoso.</li><li>Asegura que no lleguen piezas malas al cliente mientras investigas.</li></ul>", 
+            example: "Se pusieron en cuarentena 200 piezas en almacén, se detuvieron envíos al cliente." 
         }
     },
     D5: {
         en: { 
             title: "D5: Root Cause Analysis", 
-            full_guide: "<ul><li>Use tools like 5 Why’s or Fishbone Diagram.</li><li>Verify the root cause with evidence.</li><li>Example: <i>Incorrect torque due to missing calibration on assembly tool.</i></li></ul>", 
+            full_guide: "<ul><li>Use tools like 5 Why’s or Fishbone Diagram.</li><li>Verify the root cause with evidence.</li></ul>", 
             example: "Incorrect torque due to missing calibration on assembly tool." 
         },
         es: { 
             title: "D5: Análisis de Causa Raíz", 
-            full_guide: "<ul><li>Usa herramientas como 5 Porqués o Diagrama de Ishikawa.</li><li>Verifica la causa raíz con evidencia.</li><li>Ejemplo: <i>Par incorrecto debido a falta de calibración en herramienta de ensamble.</i></li></ul>", 
-            example: "Par incorrecto debido a falta de calibración." 
+            full_guide: "<ul><li>Usa herramientas como 5 Porqués o Diagrama de Ishikawa.</li><li>Verifica la causa raíz con evidencia.</li></ul>", 
+            example: "Par incorrecto debido a falta de calibración en herramienta de ensamble." 
         }
     },
     D6: {
         en: { 
             title: "D6: Corrective Actions", 
-            full_guide: "<ul><li>Define permanent solutions to eliminate the root cause.</li><li>Validate with testing or simulation.</li><li>Example: <i>Implemented torque monitoring system to prevent missed calibrations.</i></li></ul>", 
-            example: "Implemented torque monitoring system." 
+            full_guide: "<ul><li>Define permanent solutions to eliminate the root cause.</li><li>Validate with testing or simulation.</li></ul>", 
+            example: "Implemented torque monitoring system to prevent missed calibrations." 
         },
         es: { 
             title: "D6: Acciones Correctivas", 
-            full_guide: "<ul><li>Define soluciones permanentes para eliminar la causa raíz.</li><li>Valida con pruebas o simulaciones.</li><li>Ejemplo: <i>Se implementó sistema de monitoreo de torque para evitar calibraciones omitidas.</i></li></ul>", 
-            example: "Se implementó sistema de monitoreo de torque." 
+            full_guide: "<ul><li>Define soluciones permanentes para eliminar la causa raíz.</li><li>Valida con pruebas o simulaciones.</li></ul>", 
+            example: "Se implementó sistema de monitoreo de torque para evitar calibraciones omitidas." 
         }
     },
     D7: {
         en: { 
             title: "D7: Verify & Prevent", 
-            full_guide: "<ul><li>Update documentation, training, and procedures.</li><li>Example: <i>Updated Work Instruction #WI-321 and retrained all operators.</i></li></ul>", 
-            example: "Updated Work Instruction #WI-321." 
+            full_guide: "<ul><li>Update documentation, training, and procedures.</li><li>Ensure the fix is sustainable.</li></ul>", 
+            example: "Updated Work Instruction #WI-321 and retrained all operators." 
         },
         es: { 
             title: "D7: Verificar y Prevenir", 
-            full_guide: "<ul><li>Actualiza documentación, entrenamiento y procedimientos.</li><li>Ejemplo: <i>Se actualizó la Instrucción de Trabajo #WI-321 y se capacitó a todos los operadores.</i></li></ul>", 
-            example: "Se actualizó la Instrucción de Trabajo #WI-321." 
+            full_guide: "<ul><li>Actualiza documentación, entrenamiento y procedimientos.</li><li>Asegura que la solución sea sostenible.</li></ul>", 
+            example: "Se actualizó la Instrucción de Trabajo #WI-321 y se capacitó a todos los operadores." 
         }
     },
     D8: {
         en: { 
             title: "D8: Recognition", 
-            full_guide: "<ul><li>Document lessons learned from this 8D process.</li><li>Identify opportunities to prevent similar issues in other products or lines.</li><li>Example: <i>Standardized torque verification checklist applied to all new model launches.</i></li></ul>", 
-            example: "Update SOPs, PFMEA, share with team." 
+            full_guide: "<ul><li>Document lessons learned from this 8D process.</li><li>Identify opportunities to prevent similar issues in other products or lines.</li></ul>", 
+            example: "Standardized torque verification checklist applied to all new model launches." 
         },
         es: { 
             title: "D8: Reconocimiento", 
-            full_guide: "<ul><li>Documenta las lecciones aprendidas de este proceso 8D.</li><li>Identifica oportunidades para prevenir problemas similares en otros productos o líneas.</li><li>Ejemplo: <i>Lista de verificación de torque estandarizada aplicada a todos los nuevos lanzamientos.</i></li></ul>", 
-            example: "Actualizar SOPs, PFMEA, compartir con el equipo." 
+            full_guide: "<ul><li>Documenta las lecciones aprendidas de este proceso 8D.</li><li>Identifica oportunidades para prevenir problemas similares en otros productos o líneas.</li></ul>", 
+            example: "Lista de verificación de torque estandarizada aplicada a todos los nuevos lanzamientos." 
         }
     }
 };
 
 const d5Categories = {
     en: {
-        occ: {
-            "Machine / Equipment": ["Equipment malfunction", "Calibration drift", "Tooling wear/damage", "Machine parameters not optimized", "Sensor malfunction"],
-            "Material / Component": ["Incorrect material", "Supplier off-spec component", "Material defect", "Damage during storage", "Labeling error"],
-            "Process / Method": ["Incorrect sequence", "Inadequate process control", "Unclear instructions", "Process drift", "Control plan missing"],
-            "Design / Engineering": ["Design not robust", "Tolerance stack-up", "Late design change", "Incorrect specification"],
-            "Environmental": ["Temp/Humidity out of range", "ESD", "Contamination", "Power fluctuation"]
-        },
-        det: {
-            "QA / Inspection": ["Incomplete checklist", "Manual inspection error", "Inspection frequency low", "Unclear criteria", "Measurement system (GR&R)"],
-            "Validation": ["Validation not updated", "Insufficient verification", "Design validation incomplete"],
-            "FMEA / Control Plan": ["Failure mode not captured", "Detection controls ineffective", "Control plan not updated"],
-            "Test Equipment": ["Calibration overdue", "Software params incorrect", "Test setup issue"]
-        },
-        sys: {
-            "Management": ["Inadequate supervision", "Insufficient resources", "Delayed response", "Lack of accountability"],
-            "Process/Procedure": ["SOPs outdated", "Process FMEA not reviewed", "Inefficient document control"],
-            "Training": ["No training matrix", "Ineffective onboarding", "Knowledge not shared"],
-            "Supplier": ["Supplier not included in review", "Supplier actions not verified"]
-        }
+        occ: { "Machine / Equipment": ["Equipment malfunction", "Calibration drift", "Tooling wear/damage", "Machine parameters not optimized", "Sensor malfunction"], "Material / Component": ["Incorrect material", "Supplier off-spec component", "Material defect", "Damage during storage", "Labeling error"], "Process / Method": ["Incorrect sequence", "Inadequate process control", "Unclear instructions", "Process drift", "Control plan missing"], "Design / Engineering": ["Design not robust", "Tolerance stack-up", "Late design change", "Incorrect specification"], "Environmental": ["Temp/Humidity out of range", "ESD", "Contamination", "Power fluctuation"] },
+        det: { "QA / Inspection": ["Incomplete checklist", "Manual inspection error", "Inspection frequency low", "Unclear criteria", "Measurement system (GR&R)"], "Validation": ["Validation not updated", "Insufficient verification", "Design validation incomplete"], "FMEA / Control Plan": ["Failure mode not captured", "Detection controls ineffective", "Control plan not updated"], "Test Equipment": ["Calibration overdue", "Software params incorrect", "Test setup issue"] },
+        sys: { "Management": ["Inadequate supervision", "Insufficient resources", "Delayed response", "Lack of accountability"], "Process/Procedure": ["SOPs outdated", "Process FMEA not reviewed", "Inefficient document control"], "Training": ["No training matrix", "Ineffective onboarding", "Knowledge not shared"], "Supplier": ["Supplier not included in review", "Supplier actions not verified"] }
     },
     es: {
-        occ: {
-            "Maquinaria / Equipo": ["Mal funcionamiento", "Descalibración", "Desgaste herramienta", "Parámetros no optimizados", "Falla sensor"],
-            "Material / Componente": ["Material incorrecto", "Componente fuera de spec", "Defecto material", "Daño almacén", "Error etiqueta"],
-            "Proceso / Método": ["Secuencia incorrecta", "Control inadecuado", "Instrucciones confusas", "Deriva proceso", "Falta plan control"],
-            "Diseño / Ingeniería": ["Diseño no robusto", "Acumulación tolerancias", "Cambio tardío", "Especificación incorrecta"],
-            "Ambiental": ["Temp/Humedad", "ESD", "Contaminación", "Fluctuación energía"]
-        },
-        det: {
-            "QA / Inspección": ["Checklist incompleto", "Error manual", "Frecuencia baja", "Criterios confusos", "Problema GR&R"],
-            "Validación": ["Validación no actualizada", "Verificación insuficiente", "Validación diseño incompleta"],
-            "FMEA / Plan Control": ["Falta modo falla", "Controles ineficaces", "Plan no actualizado"],
-            "Equipo Prueba": ["Calibración vencida", "Params software mal", "Problema setup"]
-        },
-        sys: {
-            "Gestión": ["Supervisión inadecuada", "Falta recursos", "Respuesta lenta", "Falta responsabilidad"],
-            "Proceso": ["SOP obsoleto", "FMEA no revisado", "Control documentos ineficaz"],
-            "Capacitación": ["Sin matriz", "Inducción ineficaz", "Conocimiento no compartido"],
-            "Proveedor": ["Proveedor no incluido", "Acciones no verificadas"]
-        }
+        occ: { "Maquinaria / Equipo": ["Mal funcionamiento", "Descalibración", "Desgaste herramienta", "Parámetros no optimizados", "Falla sensor"], "Material / Componente": ["Material incorrecto", "Componente fuera de spec", "Defecto material", "Daño almacén", "Error etiqueta"], "Proceso / Método": ["Secuencia incorrecta", "Control inadecuado", "Instrucciones confusas", "Deriva proceso", "Falta plan control"], "Diseño / Ingeniería": ["Diseño no robusto", "Acumulación tolerancias", "Cambio tardío", "Especificación incorrecta"], "Ambiental": ["Temp/Humedad", "ESD", "Contaminación", "Fluctuación energía"] },
+        det: { "QA / Inspección": ["Checklist incompleto", "Error manual", "Frecuencia baja", "Criterios confusos", "Problema GR&R"], "Validación": ["Validación no actualizada", "Verificación insuficiente", "Validación diseño incompleta"], "FMEA / Plan Control": ["Falta modo falla", "Controles ineficaces", "Plan no actualizado"], "Equipo Prueba": ["Calibración vencida", "Params software mal", "Problema setup"] },
+        sys: { "Gestión": ["Supervisión inadecuada", "Falta recursos", "Respuesta lenta", "Falta responsabilidad"], "Proceso": ["SOP obsoleto", "FMEA no revisado", "Control documentos ineficaz"], "Capacitación": ["Sin matriz", "Inducción ineficaz", "Conocimiento no compartido"], "Proveedor": ["Proveedor no incluido", "Acciones no verificadas"] }
     }
 };
 
@@ -354,22 +353,35 @@ const app = {
     steps: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
     data: {
         meta: { date: new Date().toLocaleDateString(), user: "" },
-        D1: { answer: "", files: [] }, D2: { answer: "" },
-        D3: { answer: "", inspection: [], files: [] },
-        D4: { answer: "", location: [], status: [], files: [] },
+        D1: { answer: "", files: [] }, D2: { answer: "" }, D3: { answer: "", inspection: [], files: [] }, D4: { answer: "", location: [], status: [], files: [] },
         D5: { occ_whys: [{selected:"", custom:""}], occ_rc: "", det_whys: [{selected:"", custom:""}], det_rc: "", sys_whys: [{selected:"", custom:""}], sys_rc: "" },
         D6: { occ: "", det: "", sys: "" }, D7: { occ: "", det: "", sys: "", files: [] }, D8: { answer: "" }
     },
 
     init: function() {
         document.getElementById('reportDate').value = this.data.meta.date;
-        document.getElementById('userApiKey').value = localStorage.getItem('aiKey') || "";
         this.render();
     },
 
-    setLang: function(l) { this.lang = l; this.render(); },
-    toggleDark: function() { document.body.classList.toggle('dark-mode'); },
-    nav: function(d) { const n = this.stepIdx + d; if(n>=0 && n<8) { this.stepIdx=n; this.render(); } },
+    setLang: function(l) { 
+        this.lang = l; 
+        document.getElementById('lblDate').innerText = l==='en'?'Report Date':'Fecha Informe';
+        document.getElementById('lblPrep').innerText = l==='en'?'Prepared By':'Preparado Por';
+        this.render(); 
+    },
+
+    toggleDark: function() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        document.getElementById('darkCheck').checked = isDark;
+        document.getElementById('lblMode').innerText = isDark ? (this.lang==='en'?'Dark Mode':'Modo Oscuro') : (this.lang==='en'?'Light Mode':'Modo Claro');
+    },
+
+    nav: function(d) {
+        const n = this.stepIdx + d;
+        if(n >= 0 && n < 8) { this.stepIdx = n; this.render(); }
+    },
+
     reset: function() { if(confirm(this.lang==='en'?"Reset all data?":"¿Borrar todos los datos?")) location.reload(); },
 
     updateData: function(s, k, v) { this.data[s][k]=v; this.updateProgress(); },
@@ -386,65 +398,76 @@ const app = {
     renderContent: function() {
         const s = this.steps[this.stepIdx]; const content = contentDB[s][this.lang];
         const div = document.getElementById('stepContent');
-        let h = `<h2>${content.title}</h2><details ${this.lang==='en'?'':'open'}><summary>${this.lang==='en'?'Training Guidance':'Guía'}</summary><div class="guidance-content">${content.full_guide}</div></details>`;
+        const placeholder = placeholders[this.lang];
 
-        if(['D1','D3','D4','D7'].includes(s)) h += `<div class="file-upload-box"><label>📷 ${this.lang==='en'?'Images':'Imágenes'}</label><input type="file" multiple onchange="app.handleFile('${s}',this)"><div id="preview-${s}" style="display:flex;gap:5px;margin-top:5px;"></div></div>`;
+        let html = `<h2>${content.title}</h2>
+        <details ${this.lang==='en'?'':'open'}>
+            <summary>${this.lang==='en'?'Training Guidance':'Guía de Entrenamiento'}</summary>
+            <div class="guidance-content">${content.full_guide}</div>
+            <div class="example-box">💡 <b>${this.lang==='en'?'Example':'Ejemplo'}:</b> ${content.example}</div>
+        </details>`;
+
+        if(['D1','D3','D4','D7'].includes(s)) h += `<div class="file-upload-box"><label>📷 ${this.lang==='en'?'Upload Images':'Subir Imágenes'}</label><input type="file" multiple onchange="app.handleFile('${s}',this)"><div id="preview-${s}" style="display:flex;gap:5px;margin-top:5px;"></div></div>`;
 
         if (s === 'D3') {
             const opts = this.lang==='en'?["During Process", "Final Inspection", "Prior Dispatch"]:["En Proceso", "Final", "Antes Envío"];
-            h += `<div class="checkbox-group">`+opts.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D3.inspection.includes(o)?'checked':''} onchange="app.toggleCheck('D3','inspection','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            h += `<textarea rows="8" oninput="app.updateData('D3','answer',this.value)">${this.data.D3.answer}</textarea>`;
+            html += `<div class="checkbox-group">`+opts.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D3.inspection.includes(o)?'checked':''} onchange="app.toggleCheck('D3','inspection','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
+            html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D3','answer',this.value)">${this.data.D3.answer}</textarea>`;
         } 
         else if (s === 'D4') {
             const l=this.lang==='en'?["WIP","Warehouse","Customer"]:["En Proceso","Almacén","Cliente"];
             const st=this.lang==='en'?["Pending","Complete"]:["Pendiente","Completo"];
-            h += `<div class="checkbox-group">`+l.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            h += `<div class="checkbox-group">`+st.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.status.includes(o)?'checked':''} onchange="app.toggleCheck('D4','status','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            h += `<textarea rows="8" oninput="app.updateData('D4','answer',this.value)">${this.data.D4.answer}</textarea>`;
+            html += `<div class="checkbox-group">`+l.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
+            html += `<div class="checkbox-group">`+st.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.status.includes(o)?'checked':''} onchange="app.toggleCheck('D4','status','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
+            html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D4','answer',this.value)">${this.data.D4.answer}</textarea>`;
         }
         else if (s === 'D5') {
-            h += `<div class="d5-context"><strong>Issue (D1):</strong> ${this.data.D1.answer||"..."}</div>
-                  <div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ ${this.lang==='en'?'Generate Root Cause Analysis (AI)':'Generar Análisis con IA'}</button><div id="aiLoading" style="display:none;">⏳ Connecting...</div></div>`;
+            h += `<div class="d5-context"><strong>${this.lang==='en'?'Issue (D1)':'Problema (D1)'}:</strong> ${this.data.D1.answer||"..."}</div>
+                  <div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ ${this.lang==='en'?'Generate Potential Root Cause Based on Analysis (AI)':'Generar Causa Raíz Potencial Basado en Análisis (IA)'}</button><div id="aiLoading" style="display:none;">⏳ AI Working...</div></div>`;
             
-            const secs = [{k:'occ_whys',rc:'occ_rc',l:'Occurrence',db:'occ'}, {k:'det_whys',rc:'det_rc',l:'Detection',db:'det'}, {k:'sys_whys',rc:'sys_rc',l:'Systemic',db:'sys'}];
+            const secs = [{k:'occ_whys',rc:'occ_rc',l:this.lang==='en'?'Occurrence Analysis':'Análisis Ocurrencia',db:'occ', sugg:this.lang==='en'?'Occurrence Root Cause Suggestion':'Sugerencia Causa Raíz Ocurrencia'}, {k:'det_whys',rc:'det_rc',l:this.lang==='en'?'Detection Analysis':'Análisis Detección',db:'det', sugg:this.lang==='en'?'Detection Root Cause Suggestion':'Sugerencia Causa Raíz Detección'}, {k:'sys_whys',rc:'sys_rc',l:this.lang==='en'?'Systemic Analysis':'Análisis Sistémico',db:'sys', sugg:this.lang==='en'?'Systemic Root Cause Suggestion':'Sugerencia Causa Raíz Sistémica'}];
+            
             secs.forEach(sec => {
-                // Collect used values to hide them in subsequent dropdowns
-                const usedValues = this.data.D5[sec.k].map(r => r.selected).filter(v => v && v !== 'Other');
+                // Collect used values to hide
+                const used = this.data.D5[sec.k].map(x=>x.selected).filter(x=>x && x!=='Other');
 
-                h += `<div class="d5-section"><h3>${sec.l}</h3>`;
+                html += `<div class="d5-section"><h3>${sec.l}</h3>`;
                 this.data.D5[sec.k].forEach((r,i) => {
-                    h += `<div class="why-row"><div class="why-label">Why ${i+1}</div>
+                    html += `<div class="why-row"><div class="why-label">Why ${i+1}</div>
                     <select class="why-select" onchange="app.updateD5('${sec.k}',${i},'selected',this.value)">
-                        <option value="">Select...</option>
-                        ${this.getD5Options(sec.db, r.selected, usedValues)}
-                        <option value="Other" ${r.selected==='Other'?'selected':''}>Other</option>
+                        <option value="">Select...</option>${this.getD5Options(sec.db,r.selected, used)}<option value="Other" ${r.selected==='Other'?'selected':''}>Other</option>
                     </select>`;
-                    if(r.selected==='Other') h += `<input class="why-custom" value="${r.custom}" oninput="app.updateD5('${sec.k}',${i},'custom',this.value)">`;
-                    h += `</div>`;
+                    if(r.selected==='Other') html += `<input class="why-custom" placeholder="${placeholder}" value="${r.custom}" oninput="app.updateD5('${sec.k}',${i},'custom',this.value)">`;
+                    html += `</div>`;
                 });
-                if(this.data.D5[sec.k].length<10) h+=`<button class="add-why-btn" onclick="app.addWhy('${sec.k}')">+ Why</button>`;
-                h += `<div class="root-cause-box"><label>Root Cause Result</label><textarea oninput="app.updateData('D5','${sec.rc}',this.value)">${this.data.D5[sec.rc]}</textarea></div></div>`;
+                if(this.data.D5[sec.k].length<10) html+=`<button class="add-why-btn" onclick="app.addWhy('${sec.k}')">+ Why</button>`;
+                html += `<div class="root-cause-box"><label>${sec.sugg}</label><textarea placeholder="${placeholder}" oninput="app.updateData('D5','${sec.rc}',this.value)">${this.data.D5[sec.rc]}</textarea></div></div>`;
             });
         }
         else if(s==='D6'||s==='D7') {
-            ['occ','det','sys'].forEach(k=>{ h+=`<label>${k.toUpperCase()} Action</label><textarea rows="3" oninput="app.updateData('${s}','${k}',this.value)">${this.data[s][k]}</textarea>`; });
+            ['occ','det','sys'].forEach(k=>{ h+=`<label>${k.toUpperCase()} Action</label><textarea rows="3" placeholder="${placeholder}" oninput="app.updateData('${s}','${k}',this.value)">${this.data[s][k]}</textarea>`; });
         }
-        else { h += `<textarea rows="10" oninput="app.updateData('${s}','answer',this.value)">${this.data[s].answer}</textarea>`; }
+        else { html += `<textarea rows="10" placeholder="${placeholder}" oninput="app.updateData('${s}','answer',this.value)">${this.data[s].answer}</textarea>`; }
 
-        div.innerHTML = h;
+        div.innerHTML = html;
         if(['D1','D3','D4','D7'].includes(s)) this.renderImages(s);
+        
+        // Nav Logic
         document.getElementById('btnPrev').style.visibility=this.stepIdx===0?'hidden':'visible';
+        // Hide Next on D8
+        document.getElementById('btnNext').style.display = this.stepIdx===7 ? 'none' : 'block';
+        document.getElementById('btnNext').innerText=this.stepIdx===7?'':(this.lang==='en'?'Next Step':'Siguiente');
     },
 
-    getD5Options: function(db, curr, usedValues) {
+    getD5Options: function(db, curr, used) {
         let h=''; const c=d5Categories[this.lang][db];
         for(const [g,items] of Object.entries(c)) {
             h+=`<optgroup label="${g}">`; 
             items.forEach(i=>{ 
-                const v=`${g}: ${i}`; 
-                // Hide if used elsewhere, show if it's the current value
-                if (!usedValues.includes(v) || v === curr) {
-                    h+=`<option value="${v}" ${curr===v?'selected':''}>${i}</option>`;
+                const v=`${g}: ${i}`;
+                // Only show if not used OR if it is the current value
+                if(!used.includes(v) || v===curr) {
+                    h+=`<option value="${v}" ${curr===v?'selected':''}>${i}</option>`; 
                 }
             }); 
             h+=`</optgroup>`;
@@ -456,28 +479,13 @@ const app = {
     updateProgress: function() { const c=this.steps.filter(s=>this.checkFilled(s)).length; document.getElementById('progressBar').style.width=(c/8*100)+'%'; document.getElementById('progressText').innerText=`${c}/8`; }
 };
 
-async function testApiKey() {
-    const key = document.getElementById('userApiKey').value.trim();
-    const status = document.getElementById('keyStatus');
-    status.innerText = "Testing...";
-    try {
-        const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-        if(req.ok) {
-            const data = await req.json();
-            status.innerHTML = `<span style="color:green">✅ OK! Found ${data.models.length} models.</span>`;
-            localStorage.setItem('aiKey', key);
-        } else {
-            status.innerHTML = `<span style="color:red">❌ Error: Invalid Key</span>`;
-        }
-    } catch(e) { status.innerHTML = `<span style="color:red">❌ Error: ${e.message}</span>`; }
-}
-
+// AI Logic
 async function askGemini() {
-    let key = document.getElementById('userApiKey').value.trim();
-    if(!key) key = DEFAULT_KEY;
+    // Use hardcoded key
+    const key = DEFAULT_KEY;
     document.getElementById('aiLoading').style.display='block';
 
-    // 1. AUTO-DISCOVER AVAILABLE MODEL
+    // 1. Auto-Detect Model
     let selectedModel = 'gemini-1.5-flash'; 
     try {
         const listReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
@@ -486,19 +494,24 @@ async function askGemini() {
             const found = data.models.find(m => m.name.includes('flash') && m.supportedGenerationMethods.includes('generateContent'));
             if(found) selectedModel = found.name.replace('models/', '');
         }
-    } catch(e) { console.warn("Model list failed, using default"); }
+    } catch(e) { console.warn("Using default model"); }
 
-    // 2. GENERATE
-    const getChain = (k) => app.data.D5[k].map(w => w.selected==='Other'?w.custom:w.selected).filter(Boolean).join(" -> ") || "None";
+    // 2. Generate
+    const getChain = (k) => app.data.D5[k].map(w => w.selected==='Other'?w.custom:w.selected).filter(Boolean).join(" -> ");
+    
+    // New Prompt Structure per requirement
     const prompt = `
     Context: ${app.data.D1.answer}.
     Occ Chain: ${getChain('occ_whys')}
     Det Chain: ${getChain('det_whys')}
     Sys Chain: ${getChain('sys_whys')}
-    Task: Suggest Root Causes. Format:
-    OCC_ROOT: [Cause]
-    DET_ROOT: [Cause]
-    SYS_ROOT: [Cause]
+    
+    Task: Suggest Root Causes.
+    IMPORTANT: Start each suggestion with the phrase "The possible root cause could be related to..."
+    Format:
+    OCC_ROOT: [Response]
+    DET_ROOT: [Response]
+    SYS_ROOT: [Response]
     Language: ${app.lang}`;
 
     try {
@@ -528,22 +541,92 @@ async function askGemini() {
 const excelHandler = {
     download: async function() {
         const wb = new ExcelJS.Workbook();
-        const ws = wb.addWorksheet('8D');
-        ws.columns = [{width:15}, {width:50}, {width:40}];
-        ws.addRow(['Step','Content','Details']).font={bold:true};
+        const ws = wb.addWorksheet('8D Report');
         
+        // Colors
+        const blueFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E90FF'}};
+        const orangeFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFA500'}}; // Orange for empty
+        const greenFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF32CD32'}}; // Green for filled D6/D7
+        const whiteFont = {bold:true, color:{argb:'FFFFFFFF'}};
+        
+        ws.columns = [{width:30}, {width:60}, {width:40}];
+
+        // Header
+        ws.mergeCells('A1:C1'); ws.getCell('A1').value='8D Report Assistant'; 
+        ws.getCell('A1').font={size:16, bold:true};
+        ws.mergeCells('A2:C2'); ws.getCell('A2').value=`Date: ${app.data.meta.date} | Prepared By: ${app.data.meta.user}`;
+
+        // Table Header
+        ws.getRow(4).values = ['Step', 'Answer', 'Extra / Notes'];
+        [1,2,3].forEach(c=>{ const cell=ws.getCell(4,c); cell.fill=blueFill; cell.font=whiteFont; cell.alignment={horizontal:'center'}; });
+
+        let r = 5;
+        const border = {top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+
         app.steps.forEach(s => {
             const d = app.data[s];
-            if(s==='D5') {
-                const fmt = (a) => a.map(w=>w.selected==='Other'?w.custom:w.selected).filter(Boolean).join('\n');
-                ws.addRow([s+'-Occ', d.occ_rc, fmt(d.occ_whys)]);
-                ws.addRow([s+'-Det', d.det_rc, fmt(d.det_whys)]);
-                ws.addRow([s+'-Sys', d.sys_rc, fmt(d.sys_whys)]);
+
+            if (s === 'D5') {
+                // D5 Rows (Occ, Det, Sys)
+                const parts = [
+                    {l: 'D5 - Root Cause (Occurrence)', v: d.occ_rc, w: d.occ_whys},
+                    {l: 'D5 - Root Cause (Detection)', v: d.det_rc, w: d.det_whys},
+                    {l: 'D5 - Root Cause (Systemic)', v: d.sys_rc, w: d.sys_whys}
+                ];
+
+                parts.forEach(p => {
+                    const whys = p.w.map(w=>w.selected==='Other'?w.custom:w.selected).filter(Boolean).join('\n');
+                    const row = ws.getRow(r);
+                    row.values = [p.l, p.v || "⚠️ No Why analysis provided yet.", whys];
+                    
+                    // Color Logic for D5
+                    if(!p.v) row.getCell(2).fill = orangeFill; 
+                    
+                    row.eachCell(c => c.border = border);
+                    row.alignment = {wrapText:true, vertical:'top'};
+                    r++;
+                });
+
+            } else if (s === 'D6' || s === 'D7') {
+                // D6/D7 Rows (Occ, Det, Sys) - Green if filled
+                const parts = ['Occurrence', 'Detection', 'Systemic'];
+                const keys = ['occ', 'det', 'sys'];
+                
+                parts.forEach((lbl, i) => {
+                    const val = d[keys[i]];
+                    const row = ws.getRow(r);
+                    row.values = [`${s} - ${lbl} Countermeasure`, val, ""];
+                    
+                    // Color Logic
+                    if(val) row.getCell(2).fill = greenFill;
+                    else row.getCell(2).fill = orangeFill;
+
+                    row.eachCell(c => c.border = border);
+                    r++;
+                });
+
             } else {
-                ws.addRow([s, d.answer, '']);
+                // D1-D4, D8
+                let extra = "";
+                if(s==='D4') extra = `Loc: ${d.location.join(',')}\nStat: ${d.status.join(',')}`;
+                
+                const row = ws.getRow(r);
+                row.values = [s, d.answer, extra];
+                row.eachCell(c => c.border = border);
+                r++;
+                
+                // Images
+                if(d.files && d.files.length) {
+                    r++; 
+                    for(const f of d.files) {
+                        const id = wb.addImage({base64: f.data, extension:'png'});
+                        ws.addImage(id, { tl:{col:1, row:r-1}, ext:{width:100, height:80} });
+                        r += 5;
+                    }
+                }
             }
         });
-        
+
         const b = await wb.xlsx.writeBuffer();
         saveAs(new Blob([b]), `8D_Report.xlsx`);
     }
