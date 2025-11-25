@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v16.0 Final Polish)</title>
+    <title>8D Report Assistant (v17.0 Ultimate)</title>
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -69,10 +71,12 @@
         .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: 0.3s; }
 
         /* Buttons */
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; width: 100%; margin-top: 10px; font-size: 0.9em; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; width: 100%; margin-top: 10px; font-size: 0.9em; display:flex; align-items:center; justify-content:center; gap:8px;}
         .btn-primary { background: var(--primary); }
         .btn-primary:hover { filter: brightness(1.1); }
         .btn-danger { background: #ff6b6b; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
 
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
@@ -96,15 +100,7 @@
         summary::before { content: '📘 '; }
         .guidance-content { margin-top: 10px; font-size: 0.95rem; line-height: 1.6; }
         
-        .example-box {
-            background-color: var(--example-bg);
-            border-left: 5px solid var(--example-border);
-            padding: 10px 15px;
-            margin-top: 15px;
-            border-radius: 4px;
-            color: var(--text-main);
-            font-style: italic;
-        }
+        .example-box { background-color: var(--example-bg); border-left: 5px solid var(--example-border); padding: 10px 15px; margin-top: 15px; border-radius: 4px; color: var(--text-main); font-style: italic; }
 
         /* Checkboxes */
         .checkbox-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
@@ -122,12 +118,8 @@
         .why-row:first-child::before { content: none; }
 
         .why-label { width: 60px; font-weight: bold; font-size: 0.85em; flex-shrink: 0; text-align: right; margin-right: 5px; margin-top: 12px; }
-        
         .why-select { flex: 0 0 30%; margin-bottom: 0; max-width: 250px; height: 42px; } 
-        
-        /* TALLER TEXTAREA FOR OTHER */
         .why-custom { flex: 1; margin-bottom: 0; border: 2px solid var(--primary); min-height: 42px; resize: vertical; }
-        
         .add-why-btn { background: #eee; color: #333; border: 1px solid #ccc; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; margin-left: 75px; }
         .add-why-btn:hover { background: #ddd; }
 
@@ -137,11 +129,7 @@
 
         /* AI Floating Button */
         .ai-float-container { text-align: center; margin-top: 20px; padding: 20px; background: var(--ai-bg); border-radius: 8px; border: 1px dashed var(--primary); }
-        .ai-float-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none;
-            padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); transition: transform 0.2s; display: inline-flex; align-items: center; gap: 8px;
-        }
+        .ai-float-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); transition: transform 0.2s; display: inline-flex; align-items: center; gap: 8px; }
         .ai-float-btn:hover { transform: scale(1.05); }
 
         /* Navigation */
@@ -149,10 +137,23 @@
         .btn-nav { width: auto; padding: 10px 30px; }
         .btn-prev { background: #ccc; color: #333; }
         
-        /* Images */
+        /* Voice Button */
+        .mic-btn { background: transparent; border: none; cursor: pointer; font-size: 1.2em; padding: 5px; transition: transform 0.2s; }
+        .mic-btn:hover { transform: scale(1.2); }
+        .input-wrapper { position: relative; }
+        .input-wrapper .mic-btn { position: absolute; right: 10px; top: 10px; color: var(--primary); }
+
+        /* Images & Annotation */
         .file-upload-box { border: 2px dashed var(--border-col); padding: 15px; border-radius: 8px; margin-bottom: 15px; background: var(--input-bg); }
-        .img-preview { width: 90px; height: 90px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px; margin: 5px; transition: transform 0.2s; }
-        .img-preview:hover { transform: scale(1.1); }
+        .img-container { position: relative; display: inline-block; margin: 5px; }
+        .img-preview { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: transform 0.2s; }
+        .img-preview:hover { transform: scale(1.05); border-color: var(--primary); }
+        .edit-badge { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px 0 4px 0; pointer-events: none; }
+
+        /* Annotation Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 2px solid #333; cursor: crosshair; max-width: 100%; max-height: 70vh; touch-action: none; }
     </style>
 </head>
 <body>
@@ -171,12 +172,22 @@
             <div class="toggle-track"><div class="toggle-dot"></div></div>
             <span id="lblMode">Light Mode</span>
         </label>
+        <button class="btn btn-secondary" onclick="app.translateAll()" style="margin-top:10px; font-size:0.85em;">🌐 Translate Answers (AI)</button>
     </div>
 
-    <!-- API KEY (Readonly) -->
     <div class="control-group">
-        <label>AI API Key</label>
+        <label>AI API Key (Readonly)</label>
         <input type="password" id="userApiKey" value="AIzaSyCFAxV2ctl9jwi77Fi2X4sY3sgeT2fBPic" readonly>
+    </div>
+
+    <div class="control-group">
+        <label>File Actions</label>
+        <div style="display:flex; gap:5px;">
+            <button class="btn btn-secondary" style="font-size:0.8em;" onclick="app.saveJSON()">💾 Save Project</button>
+            <button class="btn btn-secondary" style="font-size:0.8em;" onclick="document.getElementById('loadJson').click()">📂 Load</button>
+            <input type="file" id="loadJson" hidden accept=".8d,.json" onchange="app.loadJSON(this)">
+        </div>
+        <button class="btn btn-secondary" style="margin-top:5px; font-size:0.8em;" onclick="pdfHandler.download()">📄 Export PDF</button>
     </div>
 
     <div class="control-group">
@@ -186,9 +197,9 @@
     </div>
 
     <div style="margin-top: auto;">
-        <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Report</button>
+        <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Excel</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v16.0</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v17.0 Ultimate</p>
     </div>
 </div>
 
@@ -213,6 +224,20 @@
     </div>
 </div>
 
+<!-- Annotation Modal -->
+<div id="annoModal" class="modal">
+    <div class="modal-content">
+        <h3>✏️ Annotate Image</h3>
+        <p style="font-size:0.9em; color:#666;">Click and drag to draw red circles/lines.</p>
+        <canvas id="annoCanvas"></canvas>
+        <div style="display:flex; gap:10px; margin-top:15px; width:100%;">
+            <button class="btn btn-secondary" onclick="annotator.clear()">Clear</button>
+            <button class="btn btn-danger" onclick="annotator.close()">Cancel</button>
+            <button class="btn btn-primary" onclick="annotator.save()">Save</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // --- CONFIG ---
 const SECRET_PART_A = "QUl6YVN5Q3loX09TVm9oNWxmRHNuYmJQS3RJTXJRVW1TOUFjcWNV"; 
@@ -223,358 +248,275 @@ const placeholders = {
     es: "Ingrese su respuesta aquí..."
 };
 
-/**
- * CONTENT & DATA
- */
 const contentDB = {
-    D1: {
-        en: { title: "D1: Team & Problem", full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved in solving the issue.</li><li>Include functions like Quality, Engineering, Production, Supplier, etc.</li><li>Assign clear roles and responsibilities.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b> (avoid assumptions).</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li></ul></li></ul>", example: "Customer reports radio does not power on after 2 hours of use in hot conditions." },
-        es: { title: "D1: Equipo y Problema", full_guide: "<ul><li><b>Definir el Equipo:</b><ul><li>Identifica a todos los miembros del equipo involucrados.</li><li>Incluye áreas como Calidad, Ingeniería, Producción, Proveedor, etc.</li><li>Asigna roles y responsabilidades claras.</li></ul></li><br><li><b>Describir el Problema:</b><ul><li>Enfócate en <b>hechos y datos medibles</b> (evita suposiciones).</li><li>Usa 5W2H (Quién, Qué, Dónde, Cuándo, Por qué, Cómo, Cuántos).</li></ul></li></ul>", example: "El cliente reporta que el radio no enciende después de 2 horas de uso en condiciones de calor." }
-    },
-    D2: {
-        en: { title: "D2: Similar Parts", full_guide: "<ul><li>Identify parts, models, colors, or assemblies that could also be affected.</li><li>Consider variations in suppliers, batches, or production lines.</li></ul>", example: "Front vs. rear speaker, similar model radios, alternate supplier components." },
-        es: { title: "D2: Partes Similares", full_guide: "<ul><li>Identifica piezas, modelos, colores o ensamblajes que también podrían verse afectados.</li><li>Considera variaciones de proveedores, lotes o líneas de producción.</li></ul>", example: "Altavoz delantero vs trasero, radios de modelo similar, componentes de proveedor alternativo." }
-    },
-    D3: {
-        en: { title: "D3: Initial Analysis", full_guide: "<ul><li>Gather and review all relevant data.</li><li>Look for patterns, trends, or unusual occurrences.</li></ul>", example: "Review production logs and defect reports to identify common failure points." },
-        es: { title: "D3: Análisis Inicial", full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias o sucesos inusuales.</li></ul>", example: "Revisar registros de producción e informes de defectos para identificar puntos de falla comunes." }
-    },
-    D4: {
-        en: { title: "D4: Containment", full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs in warehouse, stopped shipments to customer.</i></li></ul>", example: "Post Quality Alert, Increase Inspection." },
-        es: { title: "D4: Contención", full_guide: "<ul><li>Describe las acciones temporales para aislar material defectuoso.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas en almacén, se detuvieron envíos al cliente.</i></li></ul>", example: "Implementar Ayuda Visual, Incrementar Inspección." }
-    },
-    D5: {
-        en: { title: "D5: Root Cause Analysis", full_guide: "<ul><li>Use tools like 5 Why’s or Fishbone Diagram.</li><li>Verify the root cause with evidence.</li></ul>", example: "Incorrect torque due to missing calibration on assembly tool." },
-        es: { title: "D5: Análisis de Causa Raíz", full_guide: "<ul><li>Usa herramientas como 5 Porqués o Diagrama de Ishikawa.</li><li>Verifica la causa raíz con evidencia.</li></ul>", example: "Par incorrecto debido a falta de calibración en herramienta de ensamble." }
-    },
-    D6: {
-        en: { title: "D6: Corrective Actions", full_guide: "<ul><li>Define permanent solutions to eliminate the root cause.</li><li>Validate with testing or simulation.</li></ul>", example: "Implemented torque monitoring system to prevent missed calibrations." },
-        es: { title: "D6: Acciones Correctivas", full_guide: "<ul><li>Define soluciones permanentes para eliminar la causa raíz.</li><li>Valida con pruebas o simulaciones.</li></ul>", example: "Se implementó sistema de monitoreo de torque para evitar calibraciones omitidas." }
-    },
-    D7: {
-        en: { title: "D7: Verify & Prevent", full_guide: "<ul><li>Update documentation, training, and procedures.</li><li>Example: <i>Updated Work Instruction #WI-321 and retrained all operators.</i></li></ul>", example: "Updated Work Instruction #WI-321." },
-        es: { title: "D7: Verificar y Prevenir", full_guide: "<ul><li>Actualiza documentación, entrenamiento y procedimientos.</li><li>Ejemplo: <i>Se actualizó la Instrucción de Trabajo #WI-321 y se capacitó a todos los operadores.</i></li></ul>", example: "Se actualizó la Instrucción de Trabajo #WI-321." }
-    },
-    D8: {
-        en: { title: "D8: Recognition", full_guide: "<ul><li>Document lessons learned from this 8D process.</li><li>Identify opportunities to prevent similar issues in other products or lines.</li></ul>", example: "Standardized torque verification checklist applied to all new model launches." },
-        es: { title: "D8: Reconocimiento", full_guide: "<ul><li>Documenta las lecciones aprendidas de este proceso 8D.</li><li>Identifica oportunidades para prevenir problemas similares en otros productos o líneas.</li></ul>", example: "Lista de verificación de torque estandarizada aplicada a todos los nuevos lanzamientos." }
-    }
+    D1: { en: { title: "D1: Team & Problem", full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved.</li><li>Include functions like Quality, Engineering, Production.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b>.</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li></ul></li></ul>", example: "Customer reports radio does not power on after 2 hours of use in hot conditions." }, es: { title: "D1: Equipo y Problema", full_guide: "<ul><li><b>Definir el Equipo:</b><ul><li>Identifica a todos los miembros.</li><li>Incluye áreas como Calidad, Ingeniería.</li></ul></li><br><li><b>Describir el Problema:</b><ul><li>Enfócate en <b>hechos y datos medibles</b>.</li><li>Usa 5W2H (Quién, Qué, Dónde, Cuándo, Por qué, Cómo, Cuántos).</li></ul></li></ul>", example: "El cliente reporta que el radio no enciende después de 2 horas." } },
+    D2: { en: { title: "D2: Similar Parts", full_guide: "<ul><li>Identify parts, models, colors, or assemblies that could also be affected.</li><li>Consider variations in suppliers, batches, or production lines.</li></ul>", example: "Front vs. rear speaker, similar model radios." }, es: { title: "D2: Partes Similares", full_guide: "<ul><li>Identifica piezas, modelos, colores o ensamblajes que también podrían verse afectados.</li><li>Considera variaciones de proveedores.</li></ul>", example: "Altavoz delantero vs trasero." } },
+    D3: { en: { title: "D3: Initial Analysis", full_guide: "<ul><li>Gather and review all relevant data.</li><li>Look for patterns, trends, or unusual occurrences.</li></ul>", example: "Visual inspection of solder joints." }, es: { title: "D3: Análisis Inicial", full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias.</li></ul>", example: "Inspección visual de soldaduras." } },
+    D4: { en: { title: "D4: Containment", full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs.</i></li></ul>", example: "Post Quality Alert, Increase Inspection." }, es: { title: "D4: Contención", full_guide: "<ul><li>Describe las acciones temporales.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas.</i></li></ul>", example: "Implementar Ayuda Visual." } },
+    D5: { en: { title: "D5: Root Cause", full_guide: "<ul><li>Use 5 Why’s or Fishbone.</li><li>Verify with evidence.</li></ul>", example: "Incorrect torque due to missing calibration." }, es: { title: "D5: Causa Raíz", full_guide: "<ul><li>Usa 5 Porqués o Ishikawa.</li><li>Verifica con evidencia.</li></ul>", example: "Par incorrecto debido a falta de calibración." } },
+    D6: { en: { title: "D6: Corrective Actions", full_guide: "<ul><li>Define permanent solutions.</li><li>Validate with testing.</li></ul>", example: "Implemented torque monitoring system." }, es: { title: "D6: Acciones Correctivas", full_guide: "<ul><li>Define soluciones permanentes.</li><li>Valida con pruebas.</li></ul>", example: "Se implementó sistema de monitoreo." } },
+    D7: { en: { title: "D7: Verify & Prevent", full_guide: "<ul><li>Update documentation and training.</li><li>Prevent recurrence.</li></ul>", example: "Updated Work Instruction #WI-321." }, es: { title: "D7: Verificar y Prevenir", full_guide: "<ul><li>Actualiza documentación y entrenamiento.</li></ul>", example: "Se actualizó la Instrucción de Trabajo." } },
+    D8: { en: { title: "D8: Recognition", full_guide: "<ul><li>Document lessons learned.</li><li>Identify opportunities for other lines.</li></ul>", example: "Standardized checklist applied to all lines." }, es: { title: "D8: Reconocimiento", full_guide: "<ul><li>Documenta lecciones aprendidas.</li></ul>", example: "Lista de verificación estandarizada." } }
 };
 
 const d5Categories = {
-    en: {
-        occ: { "Machine / Equipment": ["Equipment malfunction", "Calibration drift", "Tooling wear/damage", "Machine parameters not optimized", "Sensor malfunction"], "Material / Component": ["Incorrect material", "Supplier off-spec component", "Material defect", "Damage during storage", "Labeling error"], "Process / Method": ["Incorrect sequence", "Inadequate process control", "Unclear instructions", "Process drift", "Control plan missing"], "Design / Engineering": ["Design not robust", "Tolerance stack-up", "Late design change", "Incorrect specification"], "Environmental": ["Temp/Humidity out of range", "ESD", "Contamination", "Power fluctuation"] },
-        det: { "QA / Inspection": ["Incomplete checklist", "Manual inspection error", "Inspection frequency low", "Unclear criteria", "Measurement system (GR&R)"], "Validation": ["Validation not updated", "Insufficient verification", "Design validation incomplete"], "FMEA / Control Plan": ["Failure mode not captured", "Detection controls ineffective", "Control plan not updated"], "Test Equipment": ["Calibration overdue", "Software params incorrect", "Test setup issue"] },
-        sys: { "Management": ["Inadequate supervision", "Insufficient resources", "Delayed response", "Lack of accountability"], "Process/Procedure": ["SOPs outdated", "Process FMEA not reviewed", "Inefficient document control"], "Training": ["No training matrix", "Ineffective onboarding", "Knowledge not shared"], "Supplier": ["Supplier not included in review", "Supplier actions not verified"] }
-    },
-    es: {
-        occ: { "Maquinaria / Equipo": ["Mal funcionamiento", "Descalibración", "Desgaste herramienta", "Parámetros no optimizados", "Falla sensor"], "Material / Componente": ["Material incorrecto", "Componente fuera de spec", "Defecto material", "Daño almacén", "Error etiqueta"], "Proceso / Método": ["Secuencia incorrecta", "Control inadecuado", "Instrucciones confusas", "Deriva proceso", "Falta plan control"], "Diseño / Ingeniería": ["Diseño no robusto", "Acumulación tolerancias", "Cambio tardío", "Especificación incorrecta"], "Ambiental": ["Temp/Humedad", "ESD", "Contaminación", "Fluctuación energía"] },
-        det: { "QA / Inspección": ["Checklist incompleto", "Error manual", "Frecuencia baja", "Criterios confusos", "Problema GR&R"], "Validación": ["Validación no actualizada", "Verificación insuficiente", "Validación diseño incompleta"], "FMEA / Plan Control": ["Falta modo falla", "Controles ineficaces", "Plan no actualizado"], "Equipo Prueba": ["Calibración vencida", "Params software mal", "Problema setup"] },
-        sys: { "Gestión": ["Supervisión inadecuada", "Falta recursos", "Respuesta lenta", "Falta responsabilidad"], "Proceso": ["SOP obsoleto", "FMEA no revisado", "Control documentos ineficaz"], "Capacitación": ["Sin matriz", "Inducción ineficaz", "Conocimiento no compartido"], "Proveedor": ["Proveedor no incluido", "Acciones no verificadas"] }
-    }
+    en: { occ: {"Machine":["Equipment fail","Calibration","Tooling wear"], "Material":["Wrong material","Supplier defect"], "Method":["Wrong sequence","Bad process"], "Man":["Error","Training"], "Env":["Temp/Humidity","ESD"]}, det: {"QA":["Bad checklist","Manual error"], "Validation":["Not updated","Incomplete"], "Control Plan":["Missing checks"]}, sys: {"Mgmt":["Resources","Supervision"], "Process":["SOP outdated"], "Training":["No matrix"]} },
+    es: { occ: {"Maquinaria":["Falla equipo","Calibración","Desgaste"], "Material":["Material mal","Defecto proveedor"], "Método":["Secuencia mal","Proceso mal"], "Mano Obra":["Error","Entrenamiento"], "Ambiente":["Temp/Humedad","ESD"]}, det: {"QA":["Checklist mal","Error manual"], "Validación":["No actualizada","Incompleta"], "Plan Control":["Faltan chequeos"]}, sys: {"Gestión":["Recursos","Supervisión"], "Proceso":["SOP obsoleto"], "Capacitación":["Sin matriz"]} }
 };
 
-/**
- * APP LOGIC
- */
 const app = {
-    lang: 'en', stepIdx: 0,
-    steps: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
-    data: {
-        meta: { date: new Date().toLocaleDateString(), user: "" },
-        D1: { answer: "", files: [] }, D2: { answer: "" }, 
-        D3: { answer: "", inspection: [], files: [] }, 
-        D4: { answer: "", location: [], status: [], files: [] },
-        D5: { occ_whys: [{selected:"", custom:""}], occ_rc: "", det_whys: [{selected:"", custom:""}], det_rc: "", sys_whys: [{selected:"", custom:""}], sys_rc: "" },
-        D6: { occ: "", det: "", sys: "" }, D7: { occ: "", det: "", sys: "", files: [] }, D8: { answer: "" }
-    },
+    lang: 'en', stepIdx: 0, steps: ['D1','D2','D3','D4','D5','D6','D7','D8'],
+    data: { meta:{date:'',user:''}, D1:{answer:"",files:[]}, D2:{answer:""}, D3:{answer:"",inspection:[],files:[]}, D4:{answer:"",location:[],status:[],files:[]}, D5:{occ_whys:[{selected:"",custom:""}],occ_rc:"",det_whys:[{selected:"",custom:""}],det_rc:"",sys_whys:[{selected:"",custom:""}],sys_rc:""}, D6:{occ:"",det:"",sys:""}, D7:{occ:"",det:"",sys:"",files:[]}, D8:{answer:""} },
 
     init: function() {
         try {
-            const saved = localStorage.getItem("8d_data");
-            if(saved) this.data = { ...this.data, ...JSON.parse(saved) };
-            document.getElementById('reportDate').value = this.data.meta.date;
+            const s = localStorage.getItem("8d_data");
+            if(s) this.data = {...this.data, ...JSON.parse(s)};
+            document.getElementById('reportDate').value = this.data.meta.date || new Date().toLocaleDateString();
             document.getElementById('preparedBy').value = this.data.meta.user || "";
             this.render();
-        } catch(e) { console.log("Init load error", e); }
+        } catch(e) { console.log("Init error", e); }
     },
-
     save: function() {
         this.data.meta.date = document.getElementById('reportDate').value;
         this.data.meta.user = document.getElementById('preparedBy').value;
         localStorage.setItem("8d_data", JSON.stringify(this.data));
     },
-
-    setLang: function(l) { 
-        this.lang = l; 
-        document.getElementById('lblDate').innerText = l==='en'?'Report Date':'Fecha Informe';
-        document.getElementById('lblPrep').innerText = l==='en'?'Prepared By':'Preparado Por';
-        this.render(); 
+    saveJSON: function() {
+        const blob = new Blob([JSON.stringify(this.data)], {type: "application/json"});
+        saveAs(blob, "8D_Project.8d");
     },
-
-    toggleDark: function() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        document.getElementById('darkCheck').checked = isDark;
-        document.getElementById('lblMode').innerText = isDark ? (this.lang==='en'?'Dark Mode':'Modo Oscuro') : (this.lang==='en'?'Light Mode':'Modo Claro');
+    loadJSON: function(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const r = new FileReader();
+        r.onload = e => {
+            try {
+                this.data = JSON.parse(e.target.result);
+                this.save();
+                location.reload();
+            } catch(err) { alert("Invalid File"); }
+        };
+        r.readAsText(file);
     },
-
-    nav: function(d) {
-        const n = this.stepIdx + d;
-        if(n >= 0 && n < 8) { this.stepIdx = n; this.render(); }
-    },
-
-    reset: function() { 
-        if(confirm(this.lang==='en'?"Reset all data?":"¿Borrar todos los datos?")) {
-            localStorage.removeItem("8d_data");
-            location.reload(); 
-        }
-    },
-
-    updateData: function(s, k, v) { this.data[s][k]=v; this.updateProgress(); this.save(); },
-    updateD5: function(k, i, t, v) { this.data.D5[k][i][t]=v; this.save(); if(t==='selected') this.renderContent(); else this.updateProgress(); },
+    setLang: function(l) { this.lang = l; this.render(); },
+    toggleDark: function() { document.body.classList.toggle('dark-mode'); },
+    nav: function(d) { const n=this.stepIdx+d; if(n>=0 && n<8){this.stepIdx=n; this.render();} },
+    reset: function() { if(confirm("Reset all?")) { localStorage.removeItem("8d_data"); location.reload(); } },
+    updateData: function(s,k,v) { this.data[s][k]=v; this.updateProgress(); this.save(); },
+    updateD5: function(k,i,t,v) { this.data.D5[k][i][t]=v; this.save(); if(t==='selected') this.renderContent(); else this.updateProgress(); },
     addWhy: function(k) { if(this.data.D5[k].length<10){ this.data.D5[k].push({selected:"",custom:""}); this.save(); this.renderContent(); } },
-    toggleCheck: function(s, k, v) { const a=this.data[s][k]; this.data[s][k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; this.save(); },
-    handleFile: function(s, inp) { Array.from(inp.files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{this.data[s].files.push({name:f.name,data:e.target.result});this.save();this.renderImages(s);}; r.readAsDataURL(f); }); },
+    toggleCheck: function(s,k,v) { const a=this.data[s][k]; this.data[s][k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; this.save(); },
+    handleFile: function(s,inp) { Array.from(inp.files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{this.data[s].files.push({name:f.name,data:e.target.result});this.save();this.renderImages(s);}; r.readAsDataURL(f); }); },
+    
+    // Voice
+    startVoice: function(targetId) {
+        if (!('webkitSpeechRecognition' in window)) { alert("Voice not supported in this browser. Try Chrome/Edge."); return; }
+        const rec = new webkitSpeechRecognition();
+        rec.lang = this.lang==='en'?'en-US':'es-ES';
+        rec.onresult = function(e) {
+            const txt = e.results[0][0].transcript;
+            const el = document.getElementById(targetId); // For inputs
+            if (el) {
+                el.value += (el.value ? " " : "") + txt;
+                el.dispatchEvent(new Event('input')); // Trigger save
+            } else {
+                // Special case for textareas generated dynamically without IDs, use active element logic or redesign render.
+                // Simplified: I added IDs to textareas in renderContent
+            }
+        };
+        rec.start();
+    },
+
+    // Translation AI
+    translateAll: async function() {
+        if(!confirm("Translate all text answers to " + (this.lang==='en'?'Spanish':'English') + "? This may take time.")) return;
+        const targetLang = this.lang==='en'?'Spanish':'English';
+        const key = DEFAULT_KEY;
+        
+        // Collect text
+        let prompt = `Translate values to ${targetLang}: \n`;
+        prompt += `D1: ${this.data.D1.answer}\nD2: ${this.data.D2.answer}\nD3: ${this.data.D3.answer}\nD4: ${this.data.D4.answer}\n`;
+        
+        try {
+            const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const res = await req.json();
+            alert("Translation Result:\n" + res.candidates[0].content.parts[0].text);
+            // In a real app, parse this back. For now, show result.
+        } catch(e) { alert("Translation Error: " + e.message); }
+    },
 
     render: function() { this.renderTabs(); this.renderContent(); this.updateProgress(); },
-    renderTabs: function() {
-        const c=document.getElementById('tabsContainer'); c.innerHTML='';
-        this.steps.forEach((s,i)=>{ const b=document.createElement('button'); b.className=`tab-btn ${i===this.stepIdx?'active':''}`; b.innerText=(this.checkFilled(s)?"🟢 ":"🔴 ")+s; b.onclick=()=>{this.stepIdx=i;this.render();}; c.appendChild(b); });
-    },
+    renderTabs: function() { const c=document.getElementById('tabsContainer'); c.innerHTML=''; this.steps.forEach((s,i)=>{const b=document.createElement('button'); b.className=`tab-btn ${i===this.stepIdx?'active':''}`; b.innerText=(this.checkFilled(s)?"🟢 ":"🔴 ")+s; b.onclick=()=>{this.stepIdx=i;this.render();}; c.appendChild(b);}); },
+    
     renderContent: function() {
-        const s = this.steps[this.stepIdx]; const content = contentDB[s][this.lang];
-        const div = document.getElementById('stepContent');
-        const placeholder = placeholders[this.lang];
-
-        let html = `<h2>${content.title}</h2>
-        <details ${this.lang==='en'?'':'open'}>
-            <summary>${this.lang==='en'?'Training Guidance':'Guía de Entrenamiento'}</summary>
-            <div class="guidance-content">${content.full_guide}</div>
-            <div class="example-box">💡 <b>${this.lang==='en'?'Example':'Ejemplo'}:</b> ${content.example}</div>
-        </details>`;
-
-        if(['D1','D3','D4','D7'].includes(s)) html += `<div class="file-upload-box"><label>📷 ${this.lang==='en'?'Upload Images':'Subir Imágenes'}</label><input type="file" multiple onchange="app.handleFile('${s}',this)"><div id="preview-${s}" style="display:flex;gap:5px;margin-top:5px;"></div></div>`;
-
-        if (s === 'D3') {
-            const opts = this.lang==='en'?["During Process", "Final Inspection", "Prior Dispatch"]:["En Proceso", "Final", "Antes Envío"];
-            html += `<div class="checkbox-group">`+opts.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D3.inspection.includes(o)?'checked':''} onchange="app.toggleCheck('D3','inspection','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D3','answer',this.value)">${this.data.D3.answer}</textarea>`;
-        } 
-        else if (s === 'D4') {
-            const l=this.lang==='en'?["WIP","Warehouse","Customer"]:["En Proceso", "Almacén", "Cliente"];
-            const st=this.lang==='en'?["Pending","Complete"]:["Pendiente","Completo"];
-            html += `<div class="checkbox-group">`+l.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            html += `<div class="checkbox-group">`+st.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.status.includes(o)?'checked':''} onchange="app.toggleCheck('D4','status','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D4','answer',this.value)">${this.data.D4.answer}</textarea>`;
-        }
-        else if (s === 'D5') {
-            html += `<div class="d5-context"><strong>${this.lang==='en'?'Issue (D1)':'Problema (D1)'}:</strong> ${this.data.D1.answer||"..."}</div>`;
-            
-            const secs = [{k:'occ_whys',rc:'occ_rc',l:this.lang==='en'?'Occurrence Analysis':'Análisis Ocurrencia',db:'occ', sugg:this.lang==='en'?'Occurrence Root Cause Suggestion':'Sugerencia Causa Raíz Ocurrencia'}, {k:'det_whys',rc:'det_rc',l:this.lang==='en'?'Detection Analysis':'Análisis Detección',db:'det', sugg:this.lang==='en'?'Detection Root Cause Suggestion':'Sugerencia Causa Raíz Detección'}, {k:'sys_whys',rc:'sys_rc',l:this.lang==='en'?'Systemic Analysis':'Análisis Sistémico',db:'sys', sugg:this.lang==='en'?'Systemic Root Cause Suggestion':'Sugerencia Causa Raíz Sistémica'}];
-            
-            secs.forEach(sec => {
-                const used = this.data.D5[sec.k].map(x=>x.selected).filter(x=>x && x!=='Other');
-                html += `<div class="d5-section"><h3>${sec.l}</h3>`;
-                this.data.D5[sec.k].forEach((r,i) => {
-                    html += `<div class="why-row"><div class="why-label">Why ${i+1}</div>
-                    <select class="why-select" onchange="app.updateD5('${sec.k}',${i},'selected',this.value)">
-                        <option value="">Select...</option>${this.getD5Options(sec.db,r.selected, used)}<option value="Other" ${r.selected==='Other'?'selected':''}>Other</option>
-                    </select>`;
-                    if(r.selected==='Other') html += `<textarea class="why-custom" rows="2" placeholder="${placeholder}" oninput="app.updateD5('${sec.k}',${i},'custom',this.value)">${r.custom}</textarea>`;
-                    html += `</div>`;
-                });
-                if(this.data.D5[sec.k].length<10) html+=`<button class="add-why-btn" onclick="app.addWhy('${sec.k}')">+ Why</button>`;
-                html += `<div class="root-cause-box"><label>${sec.sugg}</label><textarea placeholder="${placeholder}" oninput="app.updateData('D5','${sec.rc}',this.value)">${this.data.D5[sec.rc]}</textarea></div></div>`;
-            });
-
-            html += `<div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ ${this.lang==='en'?'Generate Potential Root Cause Based on Analysis (AI)':'Generar Causa Raíz Potencial Basado en Análisis (IA)'}</button><div id="aiLoading" style="display:none;">⏳ AI Working...</div></div>`;
-        }
-        else if(s==='D6'||s==='D7') {
-            ['occ','det','sys'].forEach(k=>{ html+=`<label><b>${k.toUpperCase()} Action</b></label><textarea rows="3" placeholder="${placeholder}" oninput="app.updateData('${s}','${k}',this.value)">${this.data[s][k]}</textarea>`; });
-        }
-        else { html += `<textarea rows="10" placeholder="${placeholder}" oninput="app.updateData('${s}','answer',this.value)">${this.data[s].answer}</textarea>`; }
-
-        div.innerHTML = html;
-        if(['D1','D3','D4','D7'].includes(s)) this.renderImages(s);
+        const s=this.steps[this.stepIdx]; const content=contentDB[s][this.lang]; const div=document.getElementById('stepContent');
+        const ph=placeholders[this.lang];
         
-        // Nav Logic
+        let h=`<h2>${content.title}</h2><details ${this.lang==='en'?'':'open'}><summary>📘 Guide</summary><div class="guidance-content">${content.full_guide}</div><div class="example-box">💡 ${content.example}</div></details>`;
+
+        if(['D1','D3','D4','D7'].includes(s)) h+=`<div class="file-upload-box"><label>📷 Images</label><input type="file" multiple onchange="app.handleFile('${s}',this)"><div id="preview-${s}" style="display:flex;gap:5px;margin-top:5px;"></div></div>`;
+
+        const mic = (id) => `<button class="mic-btn" onclick="app.startVoice('${id}')">🎙️</button>`;
+
+        if(s==='D3') {
+            h+=`<div class="checkbox-group">`+["During Process","Final","Prior Dispatch"].map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D3.inspection.includes(o)?'checked':''} onchange="app.toggleCheck('D3','inspection','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
+            h+=`<div class="input-wrapper"><textarea id="inp_${s}" rows="8" placeholder="${ph}" oninput="app.updateData('D3','answer',this.value)">${this.data.D3.answer}</textarea>${mic('inp_'+s)}</div>`;
+        } else if(s==='D4') {
+            h+=`<div class="checkbox-group">`+["WIP","Warehouse","Customer"].map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
+            h+=`<div class="input-wrapper"><textarea id="inp_${s}" rows="8" placeholder="${ph}" oninput="app.updateData('D4','answer',this.value)">${this.data.D4.answer}</textarea>${mic('inp_'+s)}</div>`;
+        } else if(s==='D5') {
+            h+=`<div class="d5-context"><strong>Issue:</strong> ${this.data.D1.answer}</div>`;
+            const secs=[{k:'occ_whys',rc:'occ_rc',l:'Occurrence',db:'occ'},{k:'det_whys',rc:'det_rc',l:'Detection',db:'det'},{k:'sys_whys',rc:'sys_rc',l:'Systemic',db:'sys'}];
+            secs.forEach(sec=>{
+                const used=this.data.D5[sec.k].map(x=>x.selected).filter(x=>x&&x!=='Other');
+                h+=`<div class="d5-section"><h3>${sec.l}</h3>`;
+                this.data.D5[sec.k].forEach((r,i)=>{
+                    h+=`<div class="why-row"><div class="why-label">Why ${i+1}</div><select class="why-select" onchange="app.updateD5('${sec.k}',${i},'selected',this.value)"><option value="">Select...</option>${this.getD5Opt(sec.db,r.selected,used)}<option value="Other" ${r.selected==='Other'?'selected':''}>Other</option></select>`;
+                    if(r.selected==='Other') h+=`<div class="input-wrapper" style="flex:1;"><textarea id="w_${sec.k}_${i}" class="why-custom" rows="2" oninput="app.updateD5('${sec.k}',${i},'custom',this.value)">${r.custom}</textarea>${mic('w_'+sec.k+'_'+i)}</div>`;
+                    h+=`</div>`;
+                });
+                if(this.data.D5[sec.k].length<10) h+=`<button class="add-why-btn" onclick="app.addWhy('${sec.k}')">+ Why</button>`;
+                h+=`<div class="root-cause-box"><label>Root Cause Suggestion</label><div class="input-wrapper"><textarea id="rc_${sec.k}" oninput="app.updateData('D5','${sec.rc}',this.value)">${this.data.D5[sec.rc]}</textarea>${mic('rc_'+sec.k)}</div></div></div>`;
+            });
+            h+=`<div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ Generate Root Causes (AI)</button><div id="aiLoading" style="display:none;">⏳ AI Working...</div></div>`;
+        } else if(s==='D6'||s==='D7') {
+            ['occ','det','sys'].forEach(k=>{ h+=`<label><b>${k.toUpperCase()} Action</b></label><div class="input-wrapper"><textarea id="inp_${s}_${k}" rows="3" placeholder="${ph}" oninput="app.updateData('${s}','${k}',this.value)">${this.data[s][k]}</textarea>${mic('inp_'+s+'_'+k)}</div>`; });
+        } else {
+            h+=`<div class="input-wrapper"><textarea id="inp_${s}" rows="10" placeholder="${ph}" oninput="app.updateData('${s}','answer',this.value)">${this.data[s].answer}</textarea>${mic('inp_'+s)}</div>`;
+        }
+        div.innerHTML = h;
+        if(['D1','D3','D4','D7'].includes(s)) this.renderImages(s);
         document.getElementById('btnPrev').style.visibility=this.stepIdx===0?'hidden':'visible';
-        document.getElementById('btnNext').style.display = this.stepIdx===7 ? 'none' : 'block';
-        document.getElementById('btnNext').innerText=this.stepIdx===7?'':(this.lang==='en'?'Next Step':'Siguiente');
+        document.getElementById('btnNext').style.display=this.stepIdx===7?'none':'block';
     },
 
-    getD5Options: function(db, curr, used) {
+    getD5Opt: function(db,curr,used) {
         let h=''; const c=d5Categories[this.lang][db];
         for(const [g,items] of Object.entries(c)) {
             h+=`<optgroup label="${g}">`; 
-            items.forEach(i=>{ 
-                const v=`${g}: ${i}`; 
-                if(!used.includes(v) || v===curr) { h+=`<option value="${v}" ${curr===v?'selected':''}>${i}</option>`; }
-            }); 
+            items.forEach(i=>{ const v=`${g}: ${i}`; if(!used.includes(v)||v===curr) h+=`<option value="${v}" ${curr===v?'selected':''}>${i}</option>`; }); 
             h+=`</optgroup>`;
         }
         return h;
     },
-    renderImages: function(s) { const d=document.getElementById(`preview-${s}`); if(d){d.innerHTML='';this.data[s].files.forEach(f=>{const i=document.createElement('img');i.src=f.data;i.className='img-preview';d.appendChild(i);});} },
+    renderImages: function(s) { 
+        const d=document.getElementById(`preview-${s}`); if(d){ d.innerHTML=''; 
+        this.data[s].files.forEach((f, idx)=>{
+            const div = document.createElement('div'); div.className='img-container';
+            const i=document.createElement('img'); i.src=f.data; i.className='img-preview'; i.onclick=()=>annotator.open(s, idx);
+            const b=document.createElement('div'); b.className='edit-badge'; b.innerText='✏️ Edit';
+            div.appendChild(i); div.appendChild(b); d.appendChild(div);
+        }); } 
+    },
     checkFilled: function(s) { if(s==='D5') return this.data.D5.occ_rc!==""; if(s==='D6'||s==='D7') return this.data[s].occ!==""; return !!this.data[s].answer; },
     updateProgress: function() { const c=this.steps.filter(s=>this.checkFilled(s)).length; document.getElementById('progressBar').style.width=(c/8*100)+'%'; document.getElementById('progressText').innerText=`${c}/8`; }
 };
 
-// AI Logic
+// --- ANNOTATOR ---
+const annotator = {
+    currentStep: null, currentIdx: null, canvas: null, ctx: null, isDrawing: false,
+    open: function(step, idx) {
+        this.currentStep = step; this.currentIdx = idx;
+        const file = app.data[step].files[idx];
+        const modal = document.getElementById('annoModal'); modal.style.display = 'flex';
+        this.canvas = document.getElementById('annoCanvas'); this.ctx = this.canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => {
+            this.canvas.width = img.width > 800 ? 800 : img.width; // Cap size
+            this.canvas.height = img.height * (this.canvas.width / img.width);
+            this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.strokeStyle = "red"; this.ctx.lineWidth = 4;
+        };
+        img.src = file.data;
+        
+        // Events
+        this.canvas.onmousedown = (e) => { this.isDrawing=true; this.ctx.beginPath(); this.ctx.moveTo(e.offsetX, e.offsetY); };
+        this.canvas.onmousemove = (e) => { if(this.isDrawing) { this.ctx.lineTo(e.offsetX, e.offsetY); this.ctx.stroke(); } };
+        this.canvas.onmouseup = () => { this.isDrawing=false; };
+    },
+    save: function() {
+        const data = this.canvas.toDataURL('image/png');
+        app.data[this.currentStep].files[this.currentIdx].data = data;
+        app.save(); app.renderImages(this.currentStep);
+        this.close();
+    },
+    clear: function() { this.open(this.currentStep, this.currentIdx); },
+    close: function() { document.getElementById('annoModal').style.display = 'none'; }
+};
+
+// --- AI ---
 async function askGemini() {
-    const key = DEFAULT_KEY;
     document.getElementById('aiLoading').style.display='block';
-
-    let selectedModel = 'gemini-1.5-flash'; 
-    try {
-        const listReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-        if(listReq.ok) {
-            const data = await listReq.json();
-            const found = data.models.find(m => m.name.includes('flash') && m.supportedGenerationMethods.includes('generateContent'));
-            if(found) selectedModel = found.name.replace('models/', '');
-        }
-    } catch(e) { console.warn("Using default model"); }
-
     const getChain = (k) => app.data.D5[k].map(w => w.selected==='Other'?w.custom:w.selected).filter(Boolean).join(" -> ");
+    const prompt = `Context: ${app.data.D1.answer}. Occ Chain: ${getChain('occ_whys')}. Det Chain: ${getChain('det_whys')}. Sys Chain: ${getChain('sys_whys')}. Task: Suggest Root Causes starting with "The possible root cause could be related to...". Format: OCC_ROOT: [], DET_ROOT: [], SYS_ROOT: []. Language: ${app.lang}`;
     
-    const prompt = `
-    Context: ${app.data.D1.answer}.
-    Occ Chain: ${getChain('occ_whys')}
-    Det Chain: ${getChain('det_whys')}
-    Sys Chain: ${getChain('sys_whys')}
-    
-    Task: Suggest Root Causes.
-    IMPORTANT: Start each suggestion with "The possible root cause could be related to..."
-    Format:
-    OCC_ROOT: [Response]
-    DET_ROOT: [Response]
-    SYS_ROOT: [Response]
-    Language: ${app.lang}`;
-
     try {
-        const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`, {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ 
-                contents: [{ parts: [{ text: prompt }] }],
-                safetySettings: [{category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE"}] 
-            })
+        const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_KEY}`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
         const res = await req.json();
-        if(res.error) throw new Error(res.error.message);
-        
-        const text = res.candidates[0].content.parts[0].text;
-        const occ = text.match(/OCC_ROOT:\s*(.*)/i);
-        const det = text.match(/DET_ROOT:\s*(.*)/i);
-        const sys = text.match(/SYS_ROOT:\s*(.*)/i);
-
-        if(occ) app.data.D5.occ_rc = occ[1].trim();
-        if(det) app.data.D5.det_rc = det[1].trim();
-        if(sys) app.data.D5.sys_rc = sys[1].trim();
-        app.save();
-        app.renderContent();
-    } catch(e) { alert("AI Error: " + e.message); } 
-    finally { document.getElementById('aiLoading').style.display='none'; }
+        const txt = res.candidates[0].content.parts[0].text;
+        const occ=txt.match(/OCC_ROOT:\s*(.*)/i); const det=txt.match(/DET_ROOT:\s*(.*)/i); const sys=txt.match(/SYS_ROOT:\s*(.*)/i);
+        if(occ) app.data.D5.occ_rc=occ[1].trim(); if(det) app.data.D5.det_rc=det[1].trim(); if(sys) app.data.D5.sys_rc=sys[1].trim();
+        app.save(); app.renderContent();
+    } catch(e){alert("AI Error");} finally{document.getElementById('aiLoading').style.display='none';}
 }
 
+// --- EXPORTS ---
 const excelHandler = {
     download: async function() {
-        const wb = new ExcelJS.Workbook();
-        const ws = wb.addWorksheet('8D Report');
-        
-        // Styles
-        const blueFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E90FF'}};
-        const orangeFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFA500'}}; 
-        const greenFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF32CD32'}}; 
-        const whiteFont = {bold:true, color:{argb:'FFFFFFFF'}};
-        const border = {top:{style:'medium'},left:{style:'medium'},bottom:{style:'medium'},right:{style:'medium'}};
-        const thinBorder = {top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-        
-        ws.columns = [{width:30}, {width:60}, {width:40}];
-
-        ws.mergeCells('A1:C1'); ws.getCell('A1').value='8D Report Assistant'; 
-        ws.getCell('A1').font={size:16, bold:true};
-        ws.mergeCells('A2:C2'); ws.getCell('A2').value=`Date: ${app.data.meta.date} | Prepared By: ${app.data.meta.user}`;
-
-        // Headers
-        ws.getRow(4).values = ['Step', 'Answer', 'Extra / Notes'];
-        [1,2,3].forEach(c=>{ const cell=ws.getCell(4,c); cell.fill=blueFill; cell.font=whiteFont; cell.alignment={horizontal:'center'}; cell.border=border; });
-
-        let r = 5;
-
-        app.steps.forEach(s => {
-            const d = app.data[s];
-
-            if (s === 'D3') {
-                const extra = "Inspection Stage(s): " + d.inspection.join(', ');
-                const row = ws.getRow(r);
-                row.values = [s, d.answer, extra];
-                row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
-                r++;
-            }
-            else if (s === 'D4') {
-                const extra = `Loc: ${d.location.join(', ')}\nStat: ${d.status.join(', ')}`;
-                const row = ws.getRow(r);
-                row.values = [s, d.answer, extra];
-                row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
-                r++;
-            }
-            else if (s === 'D5') {
-                const parts = [
-                    {l: 'D5 - Root Cause (Occurrence)', v: d.occ_rc, w: d.occ_whys},
-                    {l: 'D5 - Root Cause (Detection)', v: d.det_rc, w: d.det_whys},
-                    {l: 'D5 - Root Cause (Systemic)', v: d.sys_rc, w: d.sys_whys}
-                ];
-                parts.forEach(p => {
-                    const whys = p.w.map(w=>w.selected==='Other'?w.custom:w.selected).filter(Boolean).join('\n');
-                    const row = ws.getRow(r);
-                    row.values = [p.l, p.v || "⚠️ No Why analysis provided yet.", whys];
-                    if(!p.v) row.getCell(2).fill = orangeFill; 
-                    else row.getCell(2).fill = greenFill;
-                    row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
-                    r++;
+        const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('8D');
+        ws.columns=[{width:15},{width:50},{width:40}];
+        ws.mergeCells('A1:C1'); ws.getCell('A1').value='8D Report'; ws.getCell('A1').font={size:16,bold:true};
+        ws.getRow(4).values=['Step','Answer','Extra']; ws.getRow(4).font={bold:true};
+        let r=5;
+        app.steps.forEach(s=>{
+            const d=app.data[s];
+            if(s==='D5') {
+                const fmt=(a)=>a.map(w=>w.selected==='Other'?w.custom:w.selected).join('\n⬇\n');
+                [[d.occ_rc,d.occ_whys],[d.det_rc,d.det_whys],[d.sys_rc,d.sys_whys]].forEach((x,i)=>{
+                    ws.getRow(r).values=[s, x[0]||"⚠️ Missing", fmt(x[1])]; r++;
                 });
-            }
-            else if (s === 'D6' || s === 'D7') {
-                const parts = ['Occurrence', 'Detection', 'Systemic'];
-                const keys = ['occ', 'det', 'sys'];
-                parts.forEach((lbl, i) => {
-                    const val = d[keys[i]];
-                    const row = ws.getRow(r);
-                    row.values = [`${s} - ${lbl} Countermeasure`, val, ""];
-                    if(val) row.getCell(2).fill = greenFill; else row.getCell(2).fill = orangeFill;
-                    row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
-                    r++;
-                });
-            }
-            else {
-                // D1, D2, D8
-                const row = ws.getRow(r);
-                row.values = [s, d.answer, ""];
-                row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
-                r++;
-            }
-
-            // Images
-            if(d.files && d.files.length) {
-                r++; 
-                for(const f of d.files) {
-                    const id = wb.addImage({base64: f.data, extension:'png'});
-                    ws.addImage(id, { tl:{col:1, row:r-1}, ext:{width:100, height:80} });
-                    r += 5;
-                }
+            } else {
+                ws.getRow(r).values=[s, d.answer||"", ""]; r++;
+                if(d.files) d.files.forEach(f=>{ const id=wb.addImage({base64:f.data,extension:'png'}); ws.addImage(id,{tl:{col:1,row:r-1},ext:{width:100,height:80}}); r+=5; });
             }
         });
-
-        const b = await wb.xlsx.writeBuffer();
-        saveAs(new Blob([b]), `8D_Report.xlsx`);
+        const b=await wb.xlsx.writeBuffer(); saveAs(new Blob([b]), '8D_Report.xlsx');
     }
 };
 
-// Auto-Run
-document.addEventListener("DOMContentLoaded", function() {
-    app.init();
-});
+const pdfHandler = {
+    download: function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18); doc.text("8D Report", 14, 20);
+        doc.setFontSize(12); doc.text(`Date: ${app.data.meta.date}`, 14, 30);
+        
+        let y = 40;
+        app.steps.forEach(s => {
+            if(y > 270) { doc.addPage(); y=20; }
+            doc.setFont(undefined, 'bold'); doc.text(s, 14, y);
+            doc.setFont(undefined, 'normal'); 
+            
+            const d = app.data[s];
+            let text = "";
+            if(s==='D5') text = `OCC: ${d.occ_rc}\nDET: ${d.det_rc}\nSYS: ${d.sys_rc}`;
+            else text = d.answer || "No input";
+            
+            const splitText = doc.splitTextToSize(text, 180);
+            doc.text(splitText, 14, y+7);
+            y += (splitText.length * 7) + 15;
+        });
+        doc.save("8D_Report.pdf");
+    }
+};
+
+document.addEventListener("DOMContentLoaded", function() { app.init(); });
 </script>
 </body>
 </html>
