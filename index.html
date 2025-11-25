@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v18.0 Integrated)</title>
+    <title>8D Report Assistant (v19.0 Voice Edition)</title>
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -25,6 +25,7 @@
             --example-bg: #fffde7;
             --example-border: #fdd835;
             --danger: #ff4d4d;
+            --record-pulse: #ff4444;
         }
 
         body.dark-mode {
@@ -41,6 +42,7 @@
             --example-bg: #423f27;
             --example-border: #c0a608;
             --danger: #ff6b6b;
+            --record-pulse: #ff6b6b;
         }
 
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: linear-gradient(to right, var(--bg-body), var(--bg-panel)); color: var(--text-main); height: 100vh; display: flex; transition: all 0.3s ease; }
@@ -55,8 +57,9 @@
         select, input[type="text"], textarea, input[type="password"] { width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-col); border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
         select:focus, input:focus, textarea:focus { border-color: var(--primary); outline: none; }
 
-        input[readonly] { background-color: #e0e0e0; color: #777; cursor: not-allowed; border: 1px solid #ccc; }
-        body.dark-mode input[readonly] { background-color: #444; color: #888; border: 1px solid #555; }
+        /* Readonly / Disabled Style */
+        input[readonly], input:disabled { background-color: #e0e0e0; color: #777; cursor: not-allowed; border: 1px solid #ccc; }
+        body.dark-mode input[readonly], body.dark-mode input:disabled { background-color: #444; color: #888; border: 1px solid #555; }
 
         /* Toggle */
         .toggle-btn { cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9em; font-weight: 600; }
@@ -129,8 +132,6 @@
         
         .add-why-btn { background: #eee; color: #333; border: 1px solid #ccc; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; margin-left: 75px; }
         .add-why-btn:hover { background: #ddd; }
-
-        /* Delete Why Button */
         .del-why-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); border-radius: 4px; padding: 5px 10px; cursor: pointer; margin-top: 5px; height: 32px; font-size: 14px; }
         .del-why-btn:hover { background: var(--danger); color: white; }
 
@@ -167,6 +168,20 @@
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @-webkit-keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* Voice / Input Wrapper */
+        .input-wrapper { position: relative; width: 100%; margin-bottom: 10px; }
+        .input-wrapper textarea { padding-bottom: 30px; } /* Space for button */
+        .mic-btn {
+            position: absolute; bottom: 8px; right: 8px;
+            background: #eee; border: 1px solid #ccc; border-radius: 50%;
+            width: 32px; height: 32px; cursor: pointer; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; color: #555;
+        }
+        .mic-btn:hover { background: #ddd; transform: scale(1.1); }
+        .mic-btn.listening { background: var(--record-pulse); color: white; border-color: var(--record-pulse); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); } }
     </style>
 </head>
 <body>
@@ -187,13 +202,13 @@
         </label>
     </div>
 
-    <!-- API KEY -->
+    <!-- API KEY (Grayed Out with Toggle) -->
     <div class="control-group">
-        <label>AI API Key</label>
-        <input type="password" id="userApiKey" placeholder="AIza... (Optional)" oninput="app.updateKey(this.value)">
+        <label style="display:flex; justify-content:space-between;">AI API Key <span style="cursor:pointer; font-weight:normal; font-size:16px;" onclick="app.toggleKeyEdit()" title="Unlock">🔓</span></label>
+        <input type="password" id="userApiKey" placeholder="AIza..." readonly oninput="app.updateKey(this.value)">
     </div>
 
-    <!-- JSON IMPORT / EXPORT (NEW) -->
+    <!-- JSON IMPORT / EXPORT -->
     <div class="control-group">
         <label>Session Management</label>
         <button class="btn btn-sm" style="background:#666;" onclick="app.exportJSON()">💾 Save Backup (JSON)</button>
@@ -210,7 +225,7 @@
     <div style="margin-top: auto;">
         <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Report</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v18.0</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v19.0</p>
     </div>
 </div>
 
@@ -249,9 +264,7 @@ const placeholders = {
     es: "Ingrese su respuesta aquí..."
 };
 
-/**
- * CONTENT & DATA - PRESERVED FROM V17/V16
- */
+// CONTENT DB
 const contentDB = {
     D1: {
         en: { title: "D1: Concern Details", full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved in solving the issue.</li><li>Include functions like Quality, Engineering, Production, Supplier, etc.</li><li>Assign clear roles and responsibilities.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b> (avoid assumptions).</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li></ul></li></ul>", example: "Customer reports radio does not power on after 2 hours of use in hot conditions." },
@@ -266,8 +279,8 @@ const contentDB = {
         es: { title: "D3: Análisis Inicial", full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias o sucesos inusuales.</li></ul>", example: "Revisar registros de producción e informes de defectos para identificar puntos de falla comunes." }
     },
     D4: {
-        en: { title: "D4: Temporary Countermeasures - Immediate Action", full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs in warehouse, stopped shipments to customer.</i></li></ul>", example: "Post Quality Alert, Increase Inspection." },
-        es: { title: "D4: Contramedidas Temporales - Accion Immediata", full_guide: "<ul><li>Describe las acciones temporales para aislar material defectuoso.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas en almacén, se detuvieron envíos al cliente.</i></li></ul>", example: "Implementar Ayuda Visual, Incrementar Inspección." }
+        en: { title: "D4: Temporary Countermeasures", full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs in warehouse, stopped shipments to customer.</i></li></ul>", example: "Post Quality Alert, Increase Inspection." },
+        es: { title: "D4: Contramedidas Temporales", full_guide: "<ul><li>Describe las acciones temporales para aislar material defectuoso.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas en almacén, se detuvieron envíos al cliente.</i></li></ul>", example: "Implementar Ayuda Visual, Incrementar Inspección." }
     },
     D5: {
         en: { title: "D5: Root Cause Analysis", full_guide: "<ul><li>Use tools like 5 Why’s or Fishbone Diagram.</li><li>Verify the root cause with evidence.</li></ul>", example: "Incorrect torque due to missing calibration on assembly tool." },
@@ -320,7 +333,6 @@ const app = {
             const saved = localStorage.getItem("8d_data");
             if(saved) this.data = { ...this.data, ...JSON.parse(saved) };
             
-            // Set Inputs
             document.getElementById('reportDate').value = this.data.meta.date;
             document.getElementById('preparedBy').value = this.data.meta.user || "";
             if(USER_KEY) document.getElementById('userApiKey').value = USER_KEY;
@@ -339,6 +351,17 @@ const app = {
     updateKey: function(val) {
         USER_KEY = val;
         localStorage.setItem("8d_apikey", val);
+    },
+    
+    // Toggle API Key Edit
+    toggleKeyEdit: function() {
+        const el = document.getElementById('userApiKey');
+        if(el.hasAttribute('readonly')) {
+            el.removeAttribute('readonly');
+            el.focus();
+        } else {
+            el.setAttribute('readonly', 'true');
+        }
     },
 
     toast: function(msg) {
@@ -403,6 +426,50 @@ const app = {
         }
     },
 
+    // --- VOICE TO TEXT LOGIC ---
+    startVoice: function(step, key, btn) {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert(this.lang==='en'?"Browser not supported for voice. Try Chrome/Edge.":"Navegador no soporta voz. Usa Chrome/Edge.");
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.lang = this.lang === 'es' ? 'es-ES' : 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => { btn.classList.add('listening'); };
+        recognition.onend = () => { btn.classList.remove('listening'); };
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            
+            // Logic to update the correct field
+            if(step === 'D5') {
+                 // D5 is nested, need to handle special cases if we add voice to whys, but for now we only support Root Cause boxes
+                 this.data.D5[key] += (this.data.D5[key] ? " " : "") + transcript;
+            } else if (step === 'D6' || step === 'D7') {
+                 this.data[step][key] += (this.data[step][key] ? " " : "") + transcript;
+            } else {
+                 this.data[step].answer += (this.data[step].answer ? " " : "") + transcript;
+            }
+            
+            this.save(true);
+            this.renderContent(); // Re-render to show text
+        };
+
+        recognition.onerror = (e) => {
+            console.error(e.error);
+            btn.classList.remove('listening');
+            alert("Mic Error: " + e.error);
+        };
+
+        recognition.start();
+    },
+    // ---------------------------
+
     render: function() { this.renderTabs(); this.renderContent(); this.updateProgress(); },
     
     renderTabs: function() {
@@ -424,17 +491,25 @@ const app = {
 
         if(['D1','D3','D4','D7'].includes(s)) html += `<div class="file-upload-box"><label>📷 ${this.lang==='en'?'Upload Images':'Subir Imágenes'}</label><input type="file" multiple onchange="app.handleFile('${s}',this)"><div id="preview-${s}" class="preview-container"></div></div>`;
 
+        // Textarea with Mic wrapper helper
+        const renderTextWithMic = (step, key, val) => {
+            return `<div class="input-wrapper">
+                <textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('${step}','${key}',this.value)" onchange="app.save(true)">${val}</textarea>
+                <button class="mic-btn" onclick="app.startVoice('${step}', '${key}', this)" title="Record">🎤</button>
+            </div>`;
+        };
+
         if (s === 'D3') {
             const opts = this.lang==='en'?["During Process", "Final Inspection", "Prior Dispatch"]:["En Proceso", "Final", "Antes Envío"];
             html += `<div class="checkbox-group">`+opts.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D3.inspection.includes(o)?'checked':''} onchange="app.toggleCheck('D3','inspection','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D3','answer',this.value)" onchange="app.save(true)">${this.data.D3.answer}</textarea>`;
+            html += renderTextWithMic('D3','answer', this.data.D3.answer);
         } 
         else if (s === 'D4') {
             const l=this.lang==='en'?["WIP","Warehouse","Customer"]:["En Proceso", "Almacén", "Cliente"];
             const st=this.lang==='en'?["Pending","Complete"]:["Pendiente","Completo"];
             html += `<div class="checkbox-group">`+l.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
             html += `<div class="checkbox-group">`+st.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.status.includes(o)?'checked':''} onchange="app.toggleCheck('D4','status','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D4','answer',this.value)" onchange="app.save(true)">${this.data.D4.answer}</textarea>`;
+            html += renderTextWithMic('D4','answer', this.data.D4.answer);
         }
         else if (s === 'D5') {
             html += `<div class="d5-context"><strong>${this.lang==='en'?'Issue (D1)':'Problema (D1)'}:</strong> ${this.data.D1.answer||"..."}</div>`;
@@ -458,15 +533,30 @@ const app = {
                     html += `</div>`;
                 });
                 if(this.data.D5[sec.k].length<10) html+=`<button class="add-why-btn" onclick="app.addWhy('${sec.k}')">+ Why</button>`;
-                html += `<div class="root-cause-box"><label>${sec.sugg}</label><textarea placeholder="${placeholder}" oninput="app.updateData('D5','${sec.rc}',this.value)" onchange="app.save(true)">${this.data.D5[sec.rc]}</textarea></div></div>`;
+                // Root Cause Box with Mic
+                html += `<div class="root-cause-box"><label>${sec.sugg}</label>
+                    <div class="input-wrapper">
+                        <textarea placeholder="${placeholder}" oninput="app.updateData('D5','${sec.rc}',this.value)" onchange="app.save(true)">${this.data.D5[sec.rc]}</textarea>
+                        <button class="mic-btn" onclick="app.startVoice('D5', '${sec.rc}', this)">🎤</button>
+                    </div>
+                </div></div>`;
             });
 
             html += `<div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ ${this.lang==='en'?'Generate Potential Root Cause Based on Analysis (AI)':'Generar Causa Raíz Potencial Basado en Análisis (IA)'}</button><div id="aiLoading" style="display:none;">⏳ AI Working...</div></div>`;
         }
         else if(s==='D6'||s==='D7') {
-            ['occ','det','sys'].forEach(k=>{ html+=`<label><b>${k.toUpperCase()} Action</b></label><textarea rows="3" placeholder="${placeholder}" oninput="app.updateData('${s}','${k}',this.value)" onchange="app.save(true)">${this.data[s][k]}</textarea>`; });
+            ['occ','det','sys'].forEach(k=>{ 
+                html+=`<label><b>${k.toUpperCase()} Action</b></label>`;
+                html+=`<div class="input-wrapper">
+                    <textarea rows="3" placeholder="${placeholder}" oninput="app.updateData('${s}','${k}',this.value)" onchange="app.save(true)">${this.data[s][k]}</textarea>
+                    <button class="mic-btn" onclick="app.startVoice('${s}', '${k}', this)">🎤</button>
+                </div>`;
+            });
         }
-        else { html += `<textarea rows="10" placeholder="${placeholder}" oninput="app.updateData('${s}','answer',this.value)" onchange="app.save(true)">${this.data[s].answer}</textarea>`; }
+        else { 
+            // D1, D2, D8
+            html += renderTextWithMic(s, 'answer', this.data[s].answer);
+        }
 
         div.innerHTML = html;
         if(['D1','D3','D4','D7'].includes(s)) this.renderImages(s);
@@ -523,7 +613,7 @@ const app = {
                 const importedData = JSON.parse(e.target.result);
                 if(!importedData.meta || !importedData.D1) throw new Error("Invalid File");
                 
-                if(confirm(this.lang==='en'?"Load this backup? Unsaved data will be lost.":"¿Cargar respaldo? Se perderán datos no guardados.")) {
+                if(confirm(this.lang==='en'?"Load this backup? Current unsaved data will be replaced.":"¿Cargar respaldo? Se reemplazarán los datos actuales.")) {
                     this.data = importedData;
                     this.save(true);
                     this.render();
@@ -538,9 +628,8 @@ const app = {
     }
 };
 
-// --- AI LOGIC (IMPROVED FIX) ---
+// --- AI LOGIC ---
 async function askGemini() {
-    // Prioritize User Key if available
     const key = USER_KEY || DEFAULT_KEY;
     document.getElementById('aiLoading').style.display='block';
 
@@ -556,7 +645,6 @@ async function askGemini() {
 
     const getChain = (k) => app.data.D5[k].map(w => w.selected==='Other'?w.custom:w.selected).filter(Boolean).join(" -> ");
     
-    // STRICTER PROMPT to handle formatting issues
     const prompt = `
     Context: ${app.data.D1.answer}.
     Occ Chain: ${getChain('occ_whys')}
@@ -584,7 +672,6 @@ async function askGemini() {
         
         const text = res.candidates[0].content.parts[0].text;
         
-        // MORE ROBUST REGEX to handle *, bold, spaces, or missing colons
         const occ = text.match(/OCC_ROOT:?\s*\*?\*?\s*(.*)/i);
         const det = text.match(/DET_ROOT:?\s*\*?\*?\s*(.*)/i);
         const sys = text.match(/SYS_ROOT:?\s*\*?\*?\s*(.*)/i);
@@ -695,4 +782,3 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 </body>
 </html>
-
