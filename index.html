@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v21.0 Final)</title>
+    <title>8D Report Assistant (v22.0 Perfect Merge)</title>
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <!-- PDF Lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script> <!-- PDF Table Lib -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        /* --- CSS FROM v16.0 (Restored) --- */
         :root {
             --primary: #1E90FF;
             --primary-dark: #104E8B;
@@ -44,7 +46,6 @@
 
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: linear-gradient(to right, var(--bg-body), var(--bg-panel)); color: var(--text-main); height: 100vh; display: flex; transition: all 0.3s ease; }
 
-        /* --- SIDEBAR --- */
         .sidebar { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border-col); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         .sidebar h2 { color: var(--primary); text-align: center; margin-top: 0; font-weight: 700; }
         
@@ -54,32 +55,25 @@
         select, input[type="text"], textarea, input[type="password"] { width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-col); border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
         select:focus, input:focus, textarea:focus { border-color: var(--primary); outline: none; }
 
-        /* Readonly Input */
         input[readonly] { background-color: #e0e0e0; color: #777; cursor: not-allowed; border: 1px solid #ccc; }
         body.dark-mode input[readonly] { background-color: #444; color: #888; border: 1px solid #555; }
 
-        /* Toggle */
         .toggle-btn { cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9em; font-weight: 600; }
         .toggle-track { width: 36px; height: 18px; background: #ccc; border-radius: 20px; position: relative; transition: 0.3s; }
         .toggle-dot { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
         input:checked + .toggle-track { background: var(--primary); }
         input:checked + .toggle-track .toggle-dot { transform: translateX(18px); }
 
-        /* Progress Bar */
         .progress-container { background: #ddd; height: 8px; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: 0.3s; }
 
-        /* Buttons */
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; width: 100%; margin-top: 10px; font-size: 0.9em; display:flex; align-items:center; justify-content:center; gap:8px; }
         .btn-primary { background: var(--primary); }
         .btn-primary:hover { filter: brightness(1.1); }
         .btn-danger { background: #ff6b6b; }
-        .btn-secondary { background: #6c757d; }
-        .btn-secondary:hover { background: #5a6268; }
+        .btn-secondary { background: #6c757d; } /* Added for new features */
 
-        /* --- MAIN CONTENT --- */
         .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
-
         .report-header { display: flex; gap: 20px; background: var(--bg-panel); padding: 20px; border-radius: 8px; border: 1px solid var(--border-col); margin-bottom: 20px; }
         .header-field { flex: 1; }
         .header-field label { font-size: 12px; font-weight: bold; color: var(--primary); text-transform: uppercase; }
@@ -91,23 +85,19 @@
         .step-container { background: var(--bg-panel); padding: 30px; border-radius: 0 8px 8px 8px; border-top: 4px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex: 1; }
         .step-container h2 { margin-top: 0; color: var(--primary-dark); }
 
-        /* Training Guides */
         details { background: var(--guide-bg); border-left: 5px solid var(--primary); padding: 15px; border-radius: 4px; margin-bottom: 25px; border: 1px solid #eee; }
         body.dark-mode details { border: 1px solid #444; }
         summary { cursor: pointer; font-weight: bold; color: var(--primary); outline: none; list-style: none; }
         summary::-webkit-details-marker { display: none; }
         summary::before { content: '📘 '; }
         .guidance-content { margin-top: 10px; font-size: 0.95rem; line-height: 1.6; }
-        
         .example-box { background-color: var(--example-bg); border-left: 5px solid var(--example-border); padding: 10px 15px; margin-top: 15px; border-radius: 4px; color: var(--text-main); font-style: italic; }
 
-        /* Checkboxes */
         .checkbox-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
         .checkbox-label { display: flex; align-items: center; gap: 6px; background: var(--input-bg); padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-col); cursor: pointer; font-size: 0.9em; user-select: none; }
         .checkbox-label:hover { border-color: var(--primary); color: var(--primary); }
         .checkbox-label input:checked + span { font-weight: 700; color: var(--primary); }
 
-        /* D5 Layout */
         .d5-context { background: var(--ai-bg); padding: 15px; border-radius: 6px; margin-bottom: 25px; border: 1px solid var(--primary); color: var(--text-main); }
         .d5-section { border-bottom: 2px dashed var(--border-col); padding-bottom: 25px; margin-bottom: 25px; }
         .d5-section h3 { color: var(--primary-dark); margin-bottom: 15px; border-left: 4px solid var(--primary); padding-left: 10px; }
@@ -115,7 +105,6 @@
         .why-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; position: relative; }
         .why-row::before { content: '⬇'; position: absolute; top: -18px; left: 20px; font-size: 12px; color: var(--primary); opacity: 0.5; }
         .why-row:first-child::before { content: none; }
-
         .why-label { width: 60px; font-weight: bold; font-size: 0.85em; flex-shrink: 0; text-align: right; margin-right: 5px; margin-top: 12px; }
         .why-select { flex: 0 0 30%; margin-bottom: 0; max-width: 250px; height: 42px; } 
         .why-custom { flex: 1; margin-bottom: 0; border: 2px solid var(--primary); min-height: 42px; resize: vertical; }
@@ -126,33 +115,32 @@
         .root-cause-box label { font-weight: bold; color: var(--primary-dark); display: block; margin-bottom: 5px; font-size: 1em; }
         .root-cause-box textarea { background: #fff; border: 2px solid var(--primary); font-weight: 500; height: 80px; }
 
-        /* AI Floating Button */
         .ai-float-container { text-align: center; margin-top: 20px; padding: 20px; background: var(--ai-bg); border-radius: 8px; border: 1px dashed var(--primary); }
         .ai-float-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); transition: transform 0.2s; display: inline-flex; align-items: center; gap: 8px; }
         .ai-float-btn:hover { transform: scale(1.05); }
 
-        /* Navigation */
         .nav-footer { display: flex; justify-content: space-between; margin-top: 20px; }
         .btn-nav { width: auto; padding: 10px 30px; }
         .btn-prev { background: #ccc; color: #333; }
         
-        /* Voice Button */
+        /* Voice Button CSS */
         .mic-btn { background: transparent; border: none; cursor: pointer; font-size: 1.2em; padding: 5px; transition: transform 0.2s; margin-left: -35px; z-index: 10; }
         .mic-btn:hover { transform: scale(1.2); }
         .input-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
         .input-wrapper textarea { width: 100%; padding-right: 30px; }
 
-        /* Images */
-        .file-upload-box { border: 2px dashed var(--border-col); padding: 15px; border-radius: 8px; margin-bottom: 15px; background: var(--input-bg); }
-        .img-container { position: relative; display: inline-block; margin: 5px; }
-        .img-preview { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: transform 0.2s; }
-        .img-preview:hover { transform: scale(1.05); border-color: var(--primary); }
-        .edit-badge { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px 0 4px 0; pointer-events: none; }
-
-        /* Modal */
+        /* Annotation Modal CSS */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center; }
         canvas { border: 2px solid #333; cursor: crosshair; max-width: 100%; max-height: 70vh; touch-action: none; }
+
+        /* Images */
+        .file-upload-box { border: 2px dashed var(--border-col); padding: 15px; border-radius: 8px; margin-bottom: 15px; background: var(--input-bg); }
+        .img-container { position: relative; display: inline-block; margin: 5px; }
+        .img-preview { width: 90px; height: 90px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px; margin: 5px; transition: transform 0.2s; cursor: pointer; }
+        .img-preview:hover { transform: scale(1.1); border-color: var(--primary); }
+        .edit-badge { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px 0 4px 0; pointer-events: none; }
+
     </style>
 </head>
 <body>
@@ -182,7 +170,7 @@
     <div class="control-group">
         <label>File Actions</label>
         <div style="display:flex; gap:5px;">
-            <button class="btn btn-secondary" style="font-size:0.8em;" onclick="app.saveJSON()">💾 Save Project</button>
+            <button class="btn btn-secondary" style="font-size:0.8em;" onclick="app.saveJSON()">💾 Save</button>
             <button class="btn btn-secondary" style="font-size:0.8em;" onclick="document.getElementById('loadJson').click()">📂 Load</button>
             <input type="file" id="loadJson" hidden accept=".8d,.json" onchange="app.loadJSON(this)">
         </div>
@@ -198,7 +186,7 @@
     <div style="margin-top: auto;">
         <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Excel</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v21.0</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v18.0</p>
     </div>
 </div>
 
@@ -246,55 +234,67 @@ const placeholders = {
     es: "Ingrese su respuesta aquí..."
 };
 
-// --- FULL CONTENT ---
+// --- FULL v16 CONTENT ---
 const contentDB = {
     D1: {
-        en: { title: "D1: Team & Problem", full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved.</li><li>Include functions like Quality, Engineering, Production.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b>.</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li></ul></li></ul>", example: "Customer reports radio does not power on after 2 hours of use in hot conditions." },
-        es: { title: "D1: Equipo y Problema", full_guide: "<ul><li><b>Definir el Equipo:</b><ul><li>Identifica a todos los miembros.</li><li>Incluye áreas como Calidad, Ingeniería.</li></ul></li><br><li><b>Describir el Problema:</b><ul><li>Enfócate en <b>hechos y datos medibles</b>.</li><li>Usa 5W2H (Quién, Qué, Dónde, Cuándo, Por qué, Cómo, Cuántos).</li></ul></li></ul>", example: "El cliente reporta que el radio no enciende después de 2 horas." }
+        en: { title: "D1: Team & Problem", full_guide: "<ul><li><b>Define the Team:</b><ul><li>Identify all team members involved in solving the issue.</li><li>Include functions like Quality, Engineering, Production, Supplier, etc.</li><li>Assign clear roles and responsibilities.</li></ul></li><br><li><b>Describe the Problem:</b><ul><li>Focus on <b>facts and measurable data</b> (avoid assumptions).</li><li>Use 5W2H (Who, What, Where, When, Why, How, How Many).</li></ul></li></ul>", example: "Customer reports radio does not power on after 2 hours of use in hot conditions." },
+        es: { title: "D1: Equipo y Problema", full_guide: "<ul><li><b>Definir el Equipo:</b><ul><li>Identifica a todos los miembros del equipo involucrados.</li><li>Incluye áreas como Calidad, Ingeniería, Producción, Proveedor, etc.</li><li>Asigna roles y responsabilidades claras.</li></ul></li><br><li><b>Describir el Problema:</b><ul><li>Enfócate en <b>hechos y datos medibles</b> (evita suposiciones).</li><li>Usa 5W2H (Quién, Qué, Dónde, Cuándo, Por qué, Cómo, Cuántos).</li></ul></li></ul>", example: "El cliente reporta que el radio no enciende después de 2 horas de uso en condiciones de calor." }
     },
     D2: {
-        en: { title: "D2: Similar Parts", full_guide: "<ul><li>Identify parts, models, colors, or assemblies that could also be affected.</li><li>Consider variations in suppliers, batches, or production lines.</li></ul>", example: "Front vs. rear speaker, similar model radios." },
-        es: { title: "D2: Partes Similares", full_guide: "<ul><li>Identifica piezas, modelos, colores o ensamblajes que también podrían verse afectados.</li><li>Considera variaciones de proveedores.</li></ul>", example: "Altavoz delantero vs trasero." }
+        en: { title: "D2: Similar Parts", full_guide: "<ul><li>Identify parts, models, colors, or assemblies that could also be affected.</li><li>Consider variations in suppliers, batches, or production lines.</li></ul>", example: "Front vs. rear speaker, similar model radios, alternate supplier components." },
+        es: { title: "D2: Partes Similares", full_guide: "<ul><li>Identifica piezas, modelos, colores o ensamblajes que también podrían verse afectados.</li><li>Considera variaciones de proveedores, lotes o líneas de producción.</li></ul>", example: "Altavoz delantero vs trasero, radios de modelo similar, componentes de proveedor alternativo." }
     },
     D3: {
-        en: { title: "D3: Initial Analysis", full_guide: "<ul><li>Gather and review all relevant data.</li><li>Look for patterns, trends, or unusual occurrences.</li></ul>", example: "Visual inspection of solder joints." },
-        es: { title: "D3: Análisis Inicial", full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias.</li></ul>", example: "Inspección visual de soldaduras." }
+        en: { title: "D3: Initial Analysis", full_guide: "<ul><li>Gather and review all relevant data.</li><li>Look for patterns, trends, or unusual occurrences.</li></ul>", example: "Review production logs and defect reports to identify common failure points." },
+        es: { title: "D3: Análisis Inicial", full_guide: "<ul><li>Recolecta y revisa todos los datos relevantes.</li><li>Busca patrones, tendencias o sucesos inusuales.</li></ul>", example: "Revisar registros de producción e informes de defectos para identificar puntos de falla comunes." }
     },
     D4: {
-        en: { title: "D4: Containment", full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs.</i></li></ul>", example: "Post Quality Alert, Increase Inspection." },
-        es: { title: "D4: Contención", full_guide: "<ul><li>Describe las acciones temporales.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas.</i></li></ul>", example: "Implementar Ayuda Visual." }
+        en: { title: "D4: Containment", full_guide: "<ul><li>Describe temporary actions to isolate defective material.</li><li>Example: <i>Quarantined 200 pcs in warehouse, stopped shipments to customer.</i></li></ul>", example: "Post Quality Alert, Increase Inspection." },
+        es: { title: "D4: Contención", full_guide: "<ul><li>Describe las acciones temporales para aislar material defectuoso.</li><li>Ejemplo: <i>Se pusieron en cuarentena 200 piezas en almacén, se detuvieron envíos al cliente.</i></li></ul>", example: "Implementar Ayuda Visual, Incrementar Inspección." }
     },
     D5: {
-        en: { title: "D5: Root Cause", full_guide: "<ul><li>Use 5 Why’s or Fishbone.</li><li>Verify with evidence.</li></ul>", example: "Incorrect torque due to missing calibration." },
-        es: { title: "D5: Causa Raíz", full_guide: "<ul><li>Usa 5 Porqués o Ishikawa.</li><li>Verifica con evidencia.</li></ul>", example: "Par incorrecto debido a falta de calibración." }
+        en: { title: "D5: Root Cause Analysis", full_guide: "<ul><li>Use tools like 5 Why’s or Fishbone Diagram.</li><li>Verify the root cause with evidence.</li></ul>", example: "Incorrect torque due to missing calibration on assembly tool." },
+        es: { title: "D5: Análisis de Causa Raíz", full_guide: "<ul><li>Usa herramientas como 5 Porqués o Diagrama de Ishikawa.</li><li>Verifica la causa raíz con evidencia.</li></ul>", example: "Par incorrecto debido a falta de calibración en herramienta de ensamble." }
     },
     D6: {
-        en: { title: "D6: Corrective Actions", full_guide: "<ul><li>Define permanent solutions.</li><li>Validate with testing.</li></ul>", example: "Implemented torque monitoring system." },
-        es: { title: "D6: Acciones Correctivas", full_guide: "<ul><li>Define soluciones permanentes.</li><li>Valida con pruebas.</li></ul>", example: "Se implementó sistema de monitoreo." }
+        en: { title: "D6: Corrective Actions", full_guide: "<ul><li>Define permanent solutions to eliminate the root cause.</li><li>Validate with testing or simulation.</li></ul>", example: "Implemented torque monitoring system to prevent missed calibrations." },
+        es: { title: "D6: Acciones Correctivas", full_guide: "<ul><li>Define soluciones permanentes para eliminar la causa raíz.</li><li>Valida con pruebas o simulaciones.</li></ul>", example: "Se implementó sistema de monitoreo de torque para evitar calibraciones omitidas." }
     },
     D7: {
-        en: { title: "D7: Verify & Prevent", full_guide: "<ul><li>Update documentation and training.</li><li>Prevent recurrence.</li></ul>", example: "Updated Work Instruction #WI-321." },
-        es: { title: "D7: Verificar y Prevenir", full_guide: "<ul><li>Actualiza documentación y entrenamiento.</li></ul>", example: "Se actualizó la Instrucción de Trabajo." }
+        en: { title: "D7: Verify & Prevent", full_guide: "<ul><li>Update documentation, training, and procedures.</li><li>Example: <i>Updated Work Instruction #WI-321 and retrained all operators.</i></li></ul>", example: "Updated Work Instruction #WI-321." },
+        es: { title: "D7: Verificar y Prevenir", full_guide: "<ul><li>Actualiza documentación, entrenamiento y procedimientos.</li><li>Ejemplo: <i>Se actualizó la Instrucción de Trabajo #WI-321 y se capacitó a todos los operadores.</i></li></ul>", example: "Se actualizó la Instrucción de Trabajo #WI-321." }
     },
     D8: {
-        en: { title: "D8: Recognition", full_guide: "<ul><li>Document lessons learned.</li><li>Identify opportunities for other lines.</li></ul>", example: "Standardized checklist applied to all lines." },
-        es: { title: "D8: Reconocimiento", full_guide: "<ul><li>Documenta lecciones aprendidas.</li></ul>", example: "Lista de verificación estandarizada." }
+        en: { title: "D8: Recognition", full_guide: "<ul><li>Document lessons learned from this 8D process.</li><li>Identify opportunities to prevent similar issues in other products or lines.</li></ul>", example: "Standardized torque verification checklist applied to all new model launches." },
+        es: { title: "D8: Reconocimiento", full_guide: "<ul><li>Documenta las lecciones aprendidas de este proceso 8D.</li><li>Identifica oportunidades para prevenir problemas similares en otros productos o líneas.</li></ul>", example: "Lista de verificación de torque estandarizada aplicada a todos los nuevos lanzamientos." }
     }
 };
 
 const d5Categories = {
-    en: { occ: {"Machine":["Equipment fail","Calibration","Tooling wear"], "Material":["Wrong material","Supplier defect"], "Method":["Wrong sequence","Bad process"], "Man":["Error","Training"], "Env":["Temp/Humidity","ESD"]}, det: {"QA":["Bad checklist","Manual error"], "Validation":["Not updated","Incomplete"], "Control Plan":["Missing checks"]}, sys: {"Mgmt":["Resources","Supervision"], "Process":["SOP outdated"], "Training":["No matrix"]} },
-    es: { occ: {"Maquinaria":["Falla equipo","Calibración","Desgaste"], "Material":["Material mal","Defecto proveedor"], "Método":["Secuencia mal","Proceso mal"], "Mano Obra":["Error","Entrenamiento"], "Ambiente":["Temp/Humedad","ESD"]}, det: {"QA":["Checklist mal","Error manual"], "Validación":["No actualizada","Incompleta"], "Plan Control":["Faltan chequeos"]}, sys: {"Gestión":["Recursos","Supervisión"], "Proceso":["SOP obsoleto"], "Capacitación":["Sin matriz"]} }
+    en: {
+        occ: { "Machine / Equipment": ["Equipment malfunction", "Calibration drift", "Tooling wear/damage", "Machine parameters not optimized", "Sensor malfunction"], "Material / Component": ["Incorrect material", "Supplier off-spec component", "Material defect", "Damage during storage", "Labeling error"], "Process / Method": ["Incorrect sequence", "Inadequate process control", "Unclear instructions", "Process drift", "Control plan missing"], "Design / Engineering": ["Design not robust", "Tolerance stack-up", "Late design change", "Incorrect specification"], "Environmental": ["Temp/Humidity out of range", "ESD", "Contamination", "Power fluctuation"] },
+        det: { "QA / Inspection": ["Incomplete checklist", "Manual inspection error", "Inspection frequency low", "Unclear criteria", "Measurement system (GR&R)"], "Validation": ["Validation not updated", "Insufficient verification", "Design validation incomplete"], "FMEA / Control Plan": ["Failure mode not captured", "Detection controls ineffective", "Control plan not updated"], "Test Equipment": ["Calibration overdue", "Software params incorrect", "Test setup issue"] },
+        sys: { "Management": ["Inadequate supervision", "Insufficient resources", "Delayed response", "Lack of accountability"], "Process/Procedure": ["SOPs outdated", "Process FMEA not reviewed", "Inefficient document control"], "Training": ["No training matrix", "Ineffective onboarding", "Knowledge not shared"], "Supplier": ["Supplier not included in review", "Supplier actions not verified"] }
+    },
+    es: {
+        occ: { "Maquinaria / Equipo": ["Mal funcionamiento", "Descalibración", "Desgaste herramienta", "Parámetros no optimizados", "Falla sensor"], "Material / Componente": ["Material incorrecto", "Componente fuera de spec", "Defecto material", "Daño almacén", "Error etiqueta"], "Proceso / Método": ["Secuencia incorrecta", "Control inadecuado", "Instrucciones confusas", "Deriva proceso", "Falta plan control"], "Diseño / Ingeniería": ["Diseño no robusto", "Acumulación tolerancias", "Cambio tardío", "Especificación incorrecta"], "Ambiental": ["Temp/Humedad", "ESD", "Contaminación", "Fluctuación energía"] },
+        det: { "QA / Inspección": ["Checklist incompleto", "Error manual", "Frecuencia baja", "Criterios confusos", "Problema GR&R"], "Validación": ["Validación no actualizada", "Verificación insuficiente", "Validación diseño incompleta"], "FMEA / Plan Control": ["Falta modo falla", "Controles ineficaces", "Plan no actualizado"], "Equipo Prueba": ["Calibración vencida", "Params software mal", "Problema setup"] },
+        sys: { "Gestión": ["Supervisión inadecuada", "Falta recursos", "Respuesta lenta", "Falta responsabilidad"], "Proceso": ["SOP obsoleto", "FMEA no revisado", "Control documentos ineficaz"], "Capacitación": ["Sin matriz", "Inducción ineficaz", "Conocimiento no compartido"], "Proveedor": ["Proveedor no incluido", "Acciones no verificadas"] }
+    }
 };
 
+/**
+ * APP LOGIC
+ */
 const app = {
-    lang: 'en', stepIdx: 0, steps: ['D1','D2','D3','D4','D5','D6','D7','D8'],
+    lang: 'en', stepIdx: 0,
+    steps: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
     data: { meta:{date:'',user:''}, D1:{answer:"",files:[]}, D2:{answer:""}, D3:{answer:"",inspection:[],files:[]}, D4:{answer:"",location:[],status:[],files:[]}, D5:{occ_whys:[{selected:"",custom:""}],occ_rc:"",det_whys:[{selected:"",custom:""}],det_rc:"",sys_whys:[{selected:"",custom:""}],sys_rc:""}, D6:{occ:"",det:"",sys:""}, D7:{occ:"",det:"",sys:"",files:[]}, D8:{answer:""} },
 
     init: function() {
         try {
-            const s = localStorage.getItem("8d_data");
-            if(s) this.data = {...this.data, ...JSON.parse(s)};
+            const saved = localStorage.getItem("8d_data");
+            if(saved) this.data = {...this.data, ...JSON.parse(saved)};
             document.getElementById('reportDate').value = this.data.meta.date || new Date().toLocaleDateString();
             document.getElementById('preparedBy').value = this.data.meta.user || "";
             this.render();
@@ -370,10 +370,8 @@ const app = {
             h+=`<div class="input-wrapper"><textarea id="inp_${s}" rows="8" placeholder="${ph}" oninput="app.updateData('D3','answer',this.value)">${this.data.D3.answer}</textarea>${mic('inp_'+s)}</div>`;
         } else if(s==='D4') {
             h+=`<div class="checkbox-group">`+["WIP","Warehouse","Customer"].map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            // FIXED: ADDED STATUS CHECKBOXES
             const stats = this.lang==='en' ? ["Pending", "Complete"] : ["Pendiente", "Completo"];
             h+=`<div class="checkbox-group">`+stats.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.status.includes(o)?'checked':''} onchange="app.toggleCheck('D4','status','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
-            
             h+=`<div class="input-wrapper"><textarea id="inp_${s}" rows="8" placeholder="${ph}" oninput="app.updateData('D4','answer',this.value)">${this.data.D4.answer}</textarea>${mic('inp_'+s)}</div>`;
         } else if(s==='D5') {
             h+=`<div class="d5-context"><strong>Issue:</strong> ${this.data.D1.answer}</div>`;
@@ -456,42 +454,30 @@ const annotator = {
 // --- AI ---
 async function askGemini() {
     document.getElementById('aiLoading').style.display='block';
-    
     const getChain = (k) => app.data.D5[k].map(w => w.selected==='Other'?w.custom:w.selected).filter(Boolean).join(" -> ");
     const prompt = `Context: ${app.data.D1.answer}. Occ Chain: ${getChain('occ_whys')}. Det Chain: ${getChain('det_whys')}. Sys Chain: ${getChain('sys_whys')}. Task: Suggest Root Causes starting with "The possible root cause could be related to...". Format: OCC_ROOT: [], DET_ROOT: [], SYS_ROOT: []. Language: ${app.lang}`;
     
-    // MODEL FALLBACK LIST
-    const models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro'];
-    let success = false;
-
-    for (const model of models) {
-        try {
-            const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${DEFAULT_KEY}`, {
-                method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            
-            if(!req.ok) throw new Error("Model " + model + " failed");
-            
-            const res = await req.json();
-            const txt = res.candidates[0].content.parts[0].text;
-            const occ=txt.match(/OCC_ROOT:\s*(.*)/i); const det=txt.match(/DET_ROOT:\s*(.*)/i); const sys=txt.match(/SYS_ROOT:\s*(.*)/i);
-            if(occ) app.data.D5.occ_rc=occ[1].trim(); if(det) app.data.D5.det_rc=det[1].trim(); if(sys) app.data.D5.sys_rc=sys[1].trim();
-            app.save(); app.renderContent();
-            success = true;
-            break; // Exit if works
-        } catch(e){ console.log(e); }
-    }
-
-    document.getElementById('aiLoading').style.display='none';
-    if(!success) alert("AI Error: No available models found. Please check Key or Quota.");
+    try {
+        const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_KEY}`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (!req.ok) {
+            const errData = await req.json();
+            throw new Error(errData.error.message || req.statusText);
+        }
+        const res = await req.json();
+        const txt = res.candidates[0].content.parts[0].text;
+        const occ=txt.match(/OCC_ROOT:\s*(.*)/i); const det=txt.match(/DET_ROOT:\s*(.*)/i); const sys=txt.match(/SYS_ROOT:\s*(.*)/i);
+        if(occ) app.data.D5.occ_rc=occ[1].trim(); if(det) app.data.D5.det_rc=det[1].trim(); if(sys) app.data.D5.sys_rc=sys[1].trim();
+        app.save(); app.renderContent();
+    } catch(e){alert("AI Error Details: " + e.message);} finally{document.getElementById('aiLoading').style.display='none';}
 }
 
-// --- EXPORTS (v16 Logic) ---
+// --- EXCEL EXPORTS (v16 Logic) ---
 const excelHandler = {
     download: async function() {
         const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('8D Report');
         
-        // Colors
         const blueFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E90FF'}};
         const orangeFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFA500'}}; 
         const greenFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF32CD32'}}; 
@@ -541,6 +527,7 @@ const excelHandler = {
     }
 };
 
+// --- PDF HANDLER ---
 const pdfHandler = {
     download: function() {
         const { jsPDF } = window.jspdf;
