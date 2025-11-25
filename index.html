@@ -185,7 +185,12 @@
             <span id="lblMode">Light Mode</span>
         </label>
     </div>
-
+   <div class="control-group">
+    <label>Session Management</label>
+    <button class="btn btn-sm" onclick="app.exportJSON()">💾 Save Backup (JSON)</button>
+    <button class="btn btn-sm" style="margin-top:5px; background:#666;" onclick="document.getElementById('jsonInput').click()">📂 Load Backup</button>
+    <input type="file" id="jsonInput" accept=".json" style="display:none" onchange="app.importJSON(this)">
+</div>
     <!-- API KEY (Readonly) -->
     <div class="control-group">
         <label>AI API Key</label>
@@ -399,7 +404,38 @@ const app = {
         const s = this.steps[this.stepIdx]; const content = contentDB[s][this.lang];
         const div = document.getElementById('stepContent');
         const placeholder = placeholders[this.lang];
+    // Add inside the app object
+    exportJSON: function() {
+        const dataStr = JSON.stringify(this.data, null, 2);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        saveAs(blob, `8D_Backup_${this.data.meta.date.replace(/\//g,'-')}.json`);
+        this.toast("Backup Downloaded!");
+    },
 
+    importJSON: function(input) {
+        const file = input.files[0];
+        if(!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                // Basic validation to check if it's a valid 8D file
+                if(!importedData.meta || !importedData.D1) throw new Error("Invalid File");
+                
+                if(confirm("Load this backup? Current unsaved data will be replaced.")) {
+                    this.data = importedData;
+                    this.save(true);
+                    this.render();
+                    this.toast("Backup Loaded Successfully!");
+                }
+            } catch(err) {
+                alert("Error loading file: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        input.value = ""; // Reset
+    },
         let html = `<h2>${content.title}</h2>
         <details ${this.lang==='en'?'':'open'}>
             <summary>${this.lang==='en'?'Training Guidance':'Guía de Entrenamiento'}</summary>
@@ -657,3 +693,4 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 </body>
 </html>
+
