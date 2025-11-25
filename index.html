@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v18.0 Final Combined)</title>
+    <title>8D Report Assistant (v19.0 Debug)</title>
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -196,9 +196,9 @@
     </div>
 
     <div style="margin-top: auto;">
-        <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Report</button>
+        <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Excel</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v18.0</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v19.0</p>
     </div>
 </div>
 
@@ -282,7 +282,6 @@ const contentDB = {
     }
 };
 
-// --- FULL v16 CATEGORIES (RESTORED) ---
 const d5Categories = {
     en: {
         occ: { "Machine / Equipment": ["Equipment malfunction", "Calibration drift", "Tooling wear/damage", "Machine parameters not optimized", "Sensor malfunction"], "Material / Component": ["Incorrect material", "Supplier off-spec component", "Material defect", "Damage during storage", "Labeling error"], "Process / Method": ["Incorrect sequence", "Inadequate process control", "Unclear instructions", "Process drift", "Control plan missing"], "Design / Engineering": ["Design not robust", "Tolerance stack-up", "Late design change", "Incorrect specification"], "Environmental": ["Temp/Humidity out of range", "ESD", "Contamination", "Power fluctuation"] },
@@ -306,8 +305,8 @@ const app = {
 
     init: function() {
         try {
-            const saved = localStorage.getItem("8d_data");
-            if(saved) this.data = {...this.data, ...JSON.parse(saved)};
+            const s = localStorage.getItem("8d_data");
+            if(s) this.data = {...this.data, ...JSON.parse(s)};
             document.getElementById('reportDate').value = this.data.meta.date || new Date().toLocaleDateString();
             document.getElementById('preparedBy').value = this.data.meta.user || "";
             this.render();
@@ -472,12 +471,16 @@ async function askGemini() {
         const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_KEY}`, {
             method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
+        if (!req.ok) {
+            const errData = await req.json();
+            throw new Error(errData.error.message || req.statusText);
+        }
         const res = await req.json();
         const txt = res.candidates[0].content.parts[0].text;
         const occ=txt.match(/OCC_ROOT:\s*(.*)/i); const det=txt.match(/DET_ROOT:\s*(.*)/i); const sys=txt.match(/SYS_ROOT:\s*(.*)/i);
         if(occ) app.data.D5.occ_rc=occ[1].trim(); if(det) app.data.D5.det_rc=det[1].trim(); if(sys) app.data.D5.sys_rc=sys[1].trim();
         app.save(); app.renderContent();
-    } catch(e){alert("AI Error");} finally{document.getElementById('aiLoading').style.display='none';}
+    } catch(e){alert("AI Error Details: " + e.message);} finally{document.getElementById('aiLoading').style.display='none';}
 }
 
 // --- EXPORTS (v16 Logic) ---
