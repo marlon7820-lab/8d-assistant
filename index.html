@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v19.0 Voice Edition)</title>
+    <title>8D Report Assistant (v19.1 Voice Fix)</title>
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -225,7 +225,7 @@
     <div style="margin-top: auto;">
         <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Report</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v19.0</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v19.1</p>
     </div>
 </div>
 
@@ -426,29 +426,43 @@ const app = {
         }
     },
 
-    // --- VOICE TO TEXT LOGIC ---
+    // --- ENHANCED VOICE TO TEXT LOGIC ---
     startVoice: function(step, key, btn) {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             alert(this.lang==='en'?"Browser not supported for voice. Try Chrome/Edge.":"Navegador no soporta voz. Usa Chrome/Edge.");
             return;
         }
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        
-        recognition.lang = this.lang === 'es' ? 'es-ES' : 'en-US';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+        // TOGGLE LOGIC: If already listening, STOP and return.
+        if (this.isListening) {
+            if(this.recognition) this.recognition.stop();
+            this.isListening = false;
+            btn.classList.remove('listening');
+            return;
+        }
 
-        recognition.onstart = () => { btn.classList.add('listening'); };
-        recognition.onend = () => { btn.classList.remove('listening'); };
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
         
-        recognition.onresult = (event) => {
+        this.recognition.lang = this.lang === 'es' ? 'es-ES' : 'en-US';
+        this.recognition.interimResults = false;
+        this.recognition.maxAlternatives = 1;
+
+        this.recognition.onstart = () => { 
+            this.isListening = true;
+            btn.classList.add('listening'); 
+        };
+        
+        this.recognition.onend = () => { 
+            this.isListening = false;
+            btn.classList.remove('listening'); 
+        };
+        
+        this.recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             
             // Logic to update the correct field
             if(step === 'D5') {
-                 // D5 is nested, need to handle special cases if we add voice to whys, but for now we only support Root Cause boxes
                  this.data.D5[key] += (this.data.D5[key] ? " " : "") + transcript;
             } else if (step === 'D6' || step === 'D7') {
                  this.data[step][key] += (this.data[step][key] ? " " : "") + transcript;
@@ -460,13 +474,19 @@ const app = {
             this.renderContent(); // Re-render to show text
         };
 
-        recognition.onerror = (e) => {
+        this.recognition.onerror = (e) => {
+            // IGNORE 'aborted' or 'no-speech'
+            if (e.error === 'aborted' || e.error === 'no-speech') {
+                this.isListening = false;
+                btn.classList.remove('listening');
+                return; // Exit silently
+            }
             console.error(e.error);
             btn.classList.remove('listening');
             alert("Mic Error: " + e.error);
         };
 
-        recognition.start();
+        this.recognition.start();
     },
     // ---------------------------
 
