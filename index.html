@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8D Report Assistant (v14.0 Stable)</title>
+    <title>8D Report Assistant (v16.0 Final Polish)</title>
     
-    <!-- External Libraries (Excel & FileSaving) -->
+    <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,8 +22,8 @@
             --input-bg: #ffffff;
             --ai-bg: #e8f4fd;
             --guide-bg: #ffffff;
-            --example-bg: #fffde7; /* Light Yellow */
-            --example-border: #fdd835; /* Gold */
+            --example-bg: #fffde7;
+            --example-border: #fdd835;
         }
 
         body.dark-mode {
@@ -53,11 +53,11 @@
         select, input[type="text"], textarea, input[type="password"] { width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-col); border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
         select:focus, input:focus, textarea:focus { border-color: var(--primary); outline: none; }
 
-        /* Readonly Input (Grayed Out) */
+        /* Readonly Input */
         input[readonly] { background-color: #e0e0e0; color: #777; cursor: not-allowed; border: 1px solid #ccc; }
         body.dark-mode input[readonly] { background-color: #444; color: #888; border: 1px solid #555; }
 
-        /* Toggle Switch */
+        /* Toggle */
         .toggle-btn { cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9em; font-weight: 600; }
         .toggle-track { width: 36px; height: 18px; background: #ccc; border-radius: 20px; position: relative; transition: 0.3s; }
         .toggle-dot { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
@@ -96,7 +96,6 @@
         summary::before { content: '📘 '; }
         .guidance-content { margin-top: 10px; font-size: 0.95rem; line-height: 1.6; }
         
-        /* Example Box */
         .example-box {
             background-color: var(--example-bg);
             border-left: 5px solid var(--example-border);
@@ -107,7 +106,7 @@
             font-style: italic;
         }
 
-        /* Checkboxes (D3/D4) */
+        /* Checkboxes */
         .checkbox-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
         .checkbox-label { display: flex; align-items: center; gap: 6px; background: var(--input-bg); padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-col); cursor: pointer; font-size: 0.9em; user-select: none; }
         .checkbox-label:hover { border-color: var(--primary); color: var(--primary); }
@@ -118,13 +117,16 @@
         .d5-section { border-bottom: 2px dashed var(--border-col); padding-bottom: 25px; margin-bottom: 25px; }
         .d5-section h3 { color: var(--primary-dark); margin-bottom: 15px; border-left: 4px solid var(--primary); padding-left: 10px; }
         
-        .why-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; position: relative; }
+        .why-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; position: relative; }
         .why-row::before { content: '⬇'; position: absolute; top: -18px; left: 20px; font-size: 12px; color: var(--primary); opacity: 0.5; }
         .why-row:first-child::before { content: none; }
 
-        .why-label { width: 60px; font-weight: bold; font-size: 0.85em; flex-shrink: 0; text-align: right; margin-right: 5px; }
-        .why-select { width: 300px; margin-bottom: 0; }
-        .why-custom { flex: 1; margin-bottom: 0; border: 2px solid var(--primary); }
+        .why-label { width: 60px; font-weight: bold; font-size: 0.85em; flex-shrink: 0; text-align: right; margin-right: 5px; margin-top: 12px; }
+        
+        .why-select { flex: 0 0 30%; margin-bottom: 0; max-width: 250px; height: 42px; } 
+        
+        /* TALLER TEXTAREA FOR OTHER */
+        .why-custom { flex: 1; margin-bottom: 0; border: 2px solid var(--primary); min-height: 42px; resize: vertical; }
         
         .add-why-btn { background: #eee; color: #333; border: 1px solid #ccc; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; margin-left: 75px; }
         .add-why-btn:hover { background: #ddd; }
@@ -134,7 +136,7 @@
         .root-cause-box textarea { background: #fff; border: 2px solid var(--primary); font-weight: 500; height: 80px; }
 
         /* AI Floating Button */
-        .ai-float-container { text-align: center; margin-bottom: 20px; }
+        .ai-float-container { text-align: center; margin-top: 20px; padding: 20px; background: var(--ai-bg); border-radius: 8px; border: 1px dashed var(--primary); }
         .ai-float-btn {
             background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none;
             padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer;
@@ -186,7 +188,7 @@
     <div style="margin-top: auto;">
         <button class="btn btn-primary" onclick="excelHandler.download()">📥 Download Report</button>
         <button class="btn btn-danger" onclick="app.reset()">🔄 Reset Session</button>
-        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v14.0 Stable</p>
+        <p style="text-align:center; font-size:10px; color:#888; margin-top:10px;">v16.0</p>
     </div>
 </div>
 
@@ -194,11 +196,11 @@
     <div class="report-header">
         <div class="header-field">
             <label id="lblDate">Report Date</label>
-            <input type="text" id="reportDate">
+            <input type="text" id="reportDate" oninput="app.save()">
         </div>
         <div class="header-field">
             <label id="lblPrep">Prepared By</label>
-            <input type="text" id="preparedBy" placeholder="Name / Department">
+            <input type="text" id="preparedBy" placeholder="Name / Department" oninput="app.save()">
         </div>
     </div>
 
@@ -212,11 +214,6 @@
 </div>
 
 <script>
-// --- GLOBAL ERROR HANDLER ---
-window.onerror = function(message, source, lineno, colno, error) {
-    alert("App Error: " + message + "\nLine: " + lineno);
-};
-
 // --- CONFIG ---
 const SECRET_PART_A = "QUl6YVN5Q3loX09TVm9oNWxmRHNuYmJQS3RJTXJRVW1TOUFjcWNV"; 
 const DEFAULT_KEY = atob(SECRET_PART_A); 
@@ -294,9 +291,18 @@ const app = {
 
     init: function() {
         try {
+            const saved = localStorage.getItem("8d_data");
+            if(saved) this.data = { ...this.data, ...JSON.parse(saved) };
             document.getElementById('reportDate').value = this.data.meta.date;
+            document.getElementById('preparedBy').value = this.data.meta.user || "";
             this.render();
-        } catch(e) { alert("Startup Error: " + e.message); }
+        } catch(e) { console.log("Init load error", e); }
+    },
+
+    save: function() {
+        this.data.meta.date = document.getElementById('reportDate').value;
+        this.data.meta.user = document.getElementById('preparedBy').value;
+        localStorage.setItem("8d_data", JSON.stringify(this.data));
     },
 
     setLang: function(l) { 
@@ -318,13 +324,18 @@ const app = {
         if(n >= 0 && n < 8) { this.stepIdx = n; this.render(); }
     },
 
-    reset: function() { if(confirm(this.lang==='en'?"Reset all data?":"¿Borrar todos los datos?")) location.reload(); },
+    reset: function() { 
+        if(confirm(this.lang==='en'?"Reset all data?":"¿Borrar todos los datos?")) {
+            localStorage.removeItem("8d_data");
+            location.reload(); 
+        }
+    },
 
-    updateData: function(s, k, v) { this.data[s][k]=v; this.updateProgress(); },
-    updateD5: function(k, i, t, v) { this.data.D5[k][i][t]=v; if(t==='selected') this.renderContent(); else this.updateProgress(); },
-    addWhy: function(k) { if(this.data.D5[k].length<10){ this.data.D5[k].push({selected:"",custom:""}); this.renderContent(); } },
-    toggleCheck: function(s, k, v) { const a=this.data[s][k]; this.data[s][k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; },
-    handleFile: function(s, inp) { Array.from(inp.files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{this.data[s].files.push({name:f.name,data:e.target.result});this.renderImages(s);}; r.readAsDataURL(f); }); },
+    updateData: function(s, k, v) { this.data[s][k]=v; this.updateProgress(); this.save(); },
+    updateD5: function(k, i, t, v) { this.data.D5[k][i][t]=v; this.save(); if(t==='selected') this.renderContent(); else this.updateProgress(); },
+    addWhy: function(k) { if(this.data.D5[k].length<10){ this.data.D5[k].push({selected:"",custom:""}); this.save(); this.renderContent(); } },
+    toggleCheck: function(s, k, v) { const a=this.data[s][k]; this.data[s][k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; this.save(); },
+    handleFile: function(s, inp) { Array.from(inp.files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{this.data[s].files.push({name:f.name,data:e.target.result});this.save();this.renderImages(s);}; r.readAsDataURL(f); }); },
 
     render: function() { this.renderTabs(); this.renderContent(); this.updateProgress(); },
     renderTabs: function() {
@@ -358,8 +369,7 @@ const app = {
             html += `<textarea rows="8" placeholder="${placeholder}" oninput="app.updateData('D4','answer',this.value)">${this.data.D4.answer}</textarea>`;
         }
         else if (s === 'D5') {
-            html += `<div class="d5-context"><strong>${this.lang==='en'?'Issue (D1)':'Problema (D1)'}:</strong> ${this.data.D1.answer||"..."}</div>
-                  <div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ ${this.lang==='en'?'Generate Potential Root Cause Based on Analysis (AI)':'Generar Causa Raíz Potencial Basado en Análisis (IA)'}</button><div id="aiLoading" style="display:none;">⏳ AI Working...</div></div>`;
+            html += `<div class="d5-context"><strong>${this.lang==='en'?'Issue (D1)':'Problema (D1)'}:</strong> ${this.data.D1.answer||"..."}</div>`;
             
             const secs = [{k:'occ_whys',rc:'occ_rc',l:this.lang==='en'?'Occurrence Analysis':'Análisis Ocurrencia',db:'occ', sugg:this.lang==='en'?'Occurrence Root Cause Suggestion':'Sugerencia Causa Raíz Ocurrencia'}, {k:'det_whys',rc:'det_rc',l:this.lang==='en'?'Detection Analysis':'Análisis Detección',db:'det', sugg:this.lang==='en'?'Detection Root Cause Suggestion':'Sugerencia Causa Raíz Detección'}, {k:'sys_whys',rc:'sys_rc',l:this.lang==='en'?'Systemic Analysis':'Análisis Sistémico',db:'sys', sugg:this.lang==='en'?'Systemic Root Cause Suggestion':'Sugerencia Causa Raíz Sistémica'}];
             
@@ -371,12 +381,14 @@ const app = {
                     <select class="why-select" onchange="app.updateD5('${sec.k}',${i},'selected',this.value)">
                         <option value="">Select...</option>${this.getD5Options(sec.db,r.selected, used)}<option value="Other" ${r.selected==='Other'?'selected':''}>Other</option>
                     </select>`;
-                    if(r.selected==='Other') html += `<input class="why-custom" placeholder="${placeholder}" value="${r.custom}" oninput="app.updateD5('${sec.k}',${i},'custom',this.value)">`;
+                    if(r.selected==='Other') html += `<textarea class="why-custom" rows="2" placeholder="${placeholder}" oninput="app.updateD5('${sec.k}',${i},'custom',this.value)">${r.custom}</textarea>`;
                     html += `</div>`;
                 });
                 if(this.data.D5[sec.k].length<10) html+=`<button class="add-why-btn" onclick="app.addWhy('${sec.k}')">+ Why</button>`;
                 html += `<div class="root-cause-box"><label>${sec.sugg}</label><textarea placeholder="${placeholder}" oninput="app.updateData('D5','${sec.rc}',this.value)">${this.data.D5[sec.rc]}</textarea></div></div>`;
             });
+
+            html += `<div class="ai-float-container"><button class="ai-float-btn" onclick="askGemini()">✨ ${this.lang==='en'?'Generate Potential Root Cause Based on Analysis (AI)':'Generar Causa Raíz Potencial Basado en Análisis (IA)'}</button><div id="aiLoading" style="display:none;">⏳ AI Working...</div></div>`;
         }
         else if(s==='D6'||s==='D7') {
             ['occ','det','sys'].forEach(k=>{ html+=`<label><b>${k.toUpperCase()} Action</b></label><textarea rows="3" placeholder="${placeholder}" oninput="app.updateData('${s}','${k}',this.value)">${this.data[s][k]}</textarea>`; });
@@ -386,6 +398,7 @@ const app = {
         div.innerHTML = html;
         if(['D1','D3','D4','D7'].includes(s)) this.renderImages(s);
         
+        // Nav Logic
         document.getElementById('btnPrev').style.visibility=this.stepIdx===0?'hidden':'visible';
         document.getElementById('btnNext').style.display = this.stepIdx===7 ? 'none' : 'block';
         document.getElementById('btnNext').innerText=this.stepIdx===7?'':(this.lang==='en'?'Next Step':'Siguiente');
@@ -413,7 +426,6 @@ async function askGemini() {
     const key = DEFAULT_KEY;
     document.getElementById('aiLoading').style.display='block';
 
-    // 1. Auto-Detect
     let selectedModel = 'gemini-1.5-flash'; 
     try {
         const listReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
@@ -424,7 +436,6 @@ async function askGemini() {
         }
     } catch(e) { console.warn("Using default model"); }
 
-    // 2. Generate
     const getChain = (k) => app.data.D5[k].map(w => w.selected==='Other'?w.custom:w.selected).filter(Boolean).join(" -> ");
     
     const prompt = `
@@ -460,6 +471,7 @@ async function askGemini() {
         if(occ) app.data.D5.occ_rc = occ[1].trim();
         if(det) app.data.D5.det_rc = det[1].trim();
         if(sys) app.data.D5.sys_rc = sys[1].trim();
+        app.save();
         app.renderContent();
     } catch(e) { alert("AI Error: " + e.message); } 
     finally { document.getElementById('aiLoading').style.display='none'; }
@@ -470,10 +482,13 @@ const excelHandler = {
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet('8D Report');
         
+        // Styles
         const blueFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E90FF'}};
         const orangeFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFA500'}}; 
         const greenFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF32CD32'}}; 
         const whiteFont = {bold:true, color:{argb:'FFFFFFFF'}};
+        const border = {top:{style:'medium'},left:{style:'medium'},bottom:{style:'medium'},right:{style:'medium'}};
+        const thinBorder = {top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
         
         ws.columns = [{width:30}, {width:60}, {width:40}];
 
@@ -481,33 +496,46 @@ const excelHandler = {
         ws.getCell('A1').font={size:16, bold:true};
         ws.mergeCells('A2:C2'); ws.getCell('A2').value=`Date: ${app.data.meta.date} | Prepared By: ${app.data.meta.user}`;
 
+        // Headers
         ws.getRow(4).values = ['Step', 'Answer', 'Extra / Notes'];
-        [1,2,3].forEach(c=>{ const cell=ws.getCell(4,c); cell.fill=blueFill; cell.font=whiteFont; cell.alignment={horizontal:'center'}; });
+        [1,2,3].forEach(c=>{ const cell=ws.getCell(4,c); cell.fill=blueFill; cell.font=whiteFont; cell.alignment={horizontal:'center'}; cell.border=border; });
 
         let r = 5;
-        const border = {top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
 
         app.steps.forEach(s => {
             const d = app.data[s];
 
-            if (s === 'D5') {
+            if (s === 'D3') {
+                const extra = "Inspection Stage(s): " + d.inspection.join(', ');
+                const row = ws.getRow(r);
+                row.values = [s, d.answer, extra];
+                row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
+                r++;
+            }
+            else if (s === 'D4') {
+                const extra = `Loc: ${d.location.join(', ')}\nStat: ${d.status.join(', ')}`;
+                const row = ws.getRow(r);
+                row.values = [s, d.answer, extra];
+                row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
+                r++;
+            }
+            else if (s === 'D5') {
                 const parts = [
                     {l: 'D5 - Root Cause (Occurrence)', v: d.occ_rc, w: d.occ_whys},
                     {l: 'D5 - Root Cause (Detection)', v: d.det_rc, w: d.det_whys},
                     {l: 'D5 - Root Cause (Systemic)', v: d.sys_rc, w: d.sys_whys}
                 ];
-
                 parts.forEach(p => {
                     const whys = p.w.map(w=>w.selected==='Other'?w.custom:w.selected).filter(Boolean).join('\n');
                     const row = ws.getRow(r);
                     row.values = [p.l, p.v || "⚠️ No Why analysis provided yet.", whys];
                     if(!p.v) row.getCell(2).fill = orangeFill; 
-                    row.eachCell(c => c.border = border);
-                    row.alignment = {wrapText:true, vertical:'top'};
+                    else row.getCell(2).fill = greenFill;
+                    row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
                     r++;
                 });
-
-            } else if (s === 'D6' || s === 'D7') {
+            }
+            else if (s === 'D6' || s === 'D7') {
                 const parts = ['Occurrence', 'Detection', 'Systemic'];
                 const keys = ['occ', 'det', 'sys'];
                 parts.forEach((lbl, i) => {
@@ -515,26 +543,25 @@ const excelHandler = {
                     const row = ws.getRow(r);
                     row.values = [`${s} - ${lbl} Countermeasure`, val, ""];
                     if(val) row.getCell(2).fill = greenFill; else row.getCell(2).fill = orangeFill;
-                    row.eachCell(c => c.border = border);
+                    row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
                     r++;
                 });
-
-            } else {
-                let extra = "";
-                if(s==='D4') extra = `Loc: ${d.location.join(',')}\nStat: ${d.status.join(',')}`;
-                
+            }
+            else {
+                // D1, D2, D8
                 const row = ws.getRow(r);
-                row.values = [s, d.answer, extra];
-                row.eachCell(c => c.border = border);
+                row.values = [s, d.answer, ""];
+                row.eachCell(c => { c.border=thinBorder; c.alignment={wrapText:true, vertical:'top'}; });
                 r++;
-                
-                if(d.files && d.files.length) {
-                    r++; 
-                    for(const f of d.files) {
-                        const id = wb.addImage({base64: f.data, extension:'png'});
-                        ws.addImage(id, { tl:{col:1, row:r-1}, ext:{width:100, height:80} });
-                        r += 5;
-                    }
+            }
+
+            // Images
+            if(d.files && d.files.length) {
+                r++; 
+                for(const f of d.files) {
+                    const id = wb.addImage({base64: f.data, extension:'png'});
+                    ws.addImage(id, { tl:{col:1, row:r-1}, ext:{width:100, height:80} });
+                    r += 5;
                 }
             }
         });
@@ -544,7 +571,7 @@ const excelHandler = {
     }
 };
 
-// Safe Start
+// Auto-Run
 document.addEventListener("DOMContentLoaded", function() {
     app.init();
 });
