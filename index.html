@@ -520,13 +520,13 @@ const app = {
         };
 
         if (s === 'D3') {
-            const opts = this.lang==='en'?["During Process", "Final Inspection", "Prior Dispatch"]:["En Proceso", "Final", "Antes Envío"];
+            const opts = this.lang==='en'?["During Process", "Final Inspection", "Prior Dispatch"]:["En Proceso", "Inspección Final", "Antes Envío"];
             html += `<div class="checkbox-group">`+opts.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D3.inspection.includes(o)?'checked':''} onchange="app.toggleCheck('D3','inspection','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
             html += renderTextWithMic('D3','answer', this.data.D3.answer);
         } 
         else if (s === 'D4') {
             const l=this.lang==='en'?["WIP","Warehouse","Customer"]:["En Proceso", "Almacén", "Cliente"];
-            const st=this.lang==='en'?["Pending","Complete"]:["Pendiente","Completo"];
+            const st=this.lang==='en'?["Pending","Complete","In Progress"]:["Pendiente","Completo", "En Proceso"];
             html += `<div class="checkbox-group">`+l.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.location.includes(o)?'checked':''} onchange="app.toggleCheck('D4','location','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
             html += `<div class="checkbox-group">`+st.map(o=>`<label class="checkbox-label"><input type="checkbox" ${this.data.D4.status.includes(o)?'checked':''} onchange="app.toggleCheck('D4','status','${o}')"><span>${o}</span></label>`).join('')+`</div>`;
             html += renderTextWithMic('D4','answer', this.data.D4.answer);
@@ -802,4 +802,5 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 </body>
 </html>
+
 
