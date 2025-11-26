@@ -672,11 +672,11 @@ async function askGemini() {
     Sys Chain: ${getChain('sys_whys')}
     
     Task: Suggest Root Causes.
-    IMPORTANT: Provide ONLY the text for the root cause. Do NOT use Markdown, Bold, or Bullet points.
-    Strict Format to follow:
-    OCC_ROOT: [Text]
-    DET_ROOT: [Text]
-    SYS_ROOT: [Text]
+    IMPORTANT: Start each suggestion with "The possible root cause could be related to..."
+    Format:
+    OCC_ROOT: [Response]
+    DET_ROOT: [Response]
+    SYS_ROOT: [Response]
     Language: ${app.lang}`;
 
     try {
@@ -802,3 +802,4 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 </body>
 </html>
+
